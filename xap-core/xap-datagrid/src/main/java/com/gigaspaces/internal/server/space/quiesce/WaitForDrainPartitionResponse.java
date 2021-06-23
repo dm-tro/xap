@@ -10,6 +10,7 @@ import java.util.concurrent.TimeoutException;
 
 public class WaitForDrainPartitionResponse implements SpaceResponseInfo {
 
+    static final long serialVersionUID = -835467480688887874L;
     private int partitionId;
     private boolean successful;
     private volatile TimeoutException exception;

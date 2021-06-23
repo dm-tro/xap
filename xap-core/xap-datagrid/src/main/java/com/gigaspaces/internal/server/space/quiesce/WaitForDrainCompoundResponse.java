@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WaitForDrainCompoundResponse implements SpaceResponseInfo {
+    static final long serialVersionUID = 919109389450552651L;
     private final Map<Integer, Exception> exceptionMap = new ConcurrentHashMap<>();
     private final Set<Integer> successfulPartitions = new ConcurrentHashSet<>();
 

@@ -18,6 +18,7 @@ import java.util.List;
 
 public class WaitForDataDrainTask extends SystemDistributedTask<SpaceResponseInfo> implements SmartExternalizable, AsyncResultFilter<SpaceResponseInfo> {
 
+    static final long serialVersionUID = -4665086919242615593L;
     private WaitForDataDrainRequest request;
     private transient WaitForDrainCompoundResponse response;
 

@@ -9,6 +9,7 @@ import java.io.ObjectOutput;
 
 public class WaitForDataDrainRequest implements SpaceRequestInfo {
 
+    static final long serialVersionUID = -216455811647301189L;
     private long timeout;
     private long minTimeToWait;
     private boolean isDemote;
