@@ -1,5 +1,6 @@
 package com.gigaspaces.jdbc.calcite.handlers;
 
+import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.model.table.*;
 import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlFunction;
@@ -15,13 +16,15 @@ public class SingleTableProjectionHandler extends RexShuttle {
     private final List<String> inputFields;
     private final List<String> outputFields;
     private final boolean isRoot;
+    private final QueryExecutor queryExecutor;
 
-    public SingleTableProjectionHandler(RexProgram program, TableContainer tableContainer, boolean isRoot) {
+    public SingleTableProjectionHandler(RexProgram program, TableContainer tableContainer, boolean isRoot, QueryExecutor queryExecutor) {
         this.program = program;
         this.tableContainer = tableContainer;
         this.inputFields = program.getInputRowType().getFieldNames();
         this.outputFields = program.getOutputRowType().getFieldNames();
         this.isRoot = isRoot;
+        this.queryExecutor = queryExecutor;
     }
 
     public void project(){
@@ -33,7 +36,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
                 RexInputRef inputRef = (RexInputRef) node;
                 String alias = outputFields.get(i);
                 String originalName = inputFields.get(inputRef.getIndex());
-                tableContainer.addQueryColumn(originalName, alias, true, 0);
+                tableContainer.addQueryColumn(originalName, alias, true, i);
             }
             else if(node instanceof RexCall){
                 RexCall call = (RexCall) node;
@@ -57,6 +60,11 @@ public class SingleTableProjectionHandler extends RexShuttle {
                             tableContainer.getVisibleColumns().add(functionCallColumn2);
                         else
                             tableContainer.getInvisibleColumns().add(functionCallColumn2);
+                        break;
+                    case CASE:
+                        CaseColumn caseColumn = new CaseColumn(outputFields.get(i), CalciteUtils.getJavaType(call), i);
+                        addCaseCondition(call, caseColumn);
+                        queryExecutor.addCaseColumn(caseColumn);
                         break;
                     default:
                         throw new UnsupportedOperationException("call of kind " + call.getKind() + " is not supported");
@@ -84,8 +92,13 @@ public class SingleTableProjectionHandler extends RexShuttle {
                     queryColumns.add(new LiteralColumn(CalciteUtils.getValue(literal)));
                 }
             }
-
         }
+    }
+
+    private void addCaseCondition(RexCall call, CaseColumn caseColumn) {
+        CaseConditionHandler caseHandler = new CaseConditionHandler(program, queryExecutor, inputFields,
+                tableContainer, caseColumn);
+        caseHandler.visitCall(call);
     }
 
     public boolean isRoot(){

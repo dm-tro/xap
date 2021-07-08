@@ -1,6 +1,7 @@
 package com.gigaspaces.jdbc.model.result;
 
 import com.gigaspaces.jdbc.model.join.JoinInfo;
+import com.gigaspaces.jdbc.model.table.CaseColumn;
 import com.gigaspaces.jdbc.model.table.IQueryColumn;
 import com.gigaspaces.jdbc.model.table.TableContainer;
 import com.j_spaces.jdbc.ResultEntry;
@@ -141,7 +142,7 @@ public abstract class QueryResult {
             TableRow entry = getCurrent();
             int column = 0;
             for (int i = 0; i < columns; i++) {
-                fieldValues[row][column++] = entry.getPropertyValue(i);
+                fieldValues[row][column++] = entry.getPropertyValue(columnLabels[i]);
             }
 
             row++;
@@ -187,5 +188,17 @@ public abstract class QueryResult {
             setRows( new ArrayList<>(tableRows.values()));
         }
 
+    }
+
+    public void addCaseColumnsToResults(List<CaseColumn> caseColumns) {
+        if (this instanceof ExplainPlanQueryResult) return;
+        if(caseColumns.isEmpty()) return;
+        List<TableRow> newRows = new ArrayList<>();
+        for (TableRow row : getRows()) {
+            newRows.add(new TableRow(row, caseColumns));
+        }
+        setRows(newRows);
+        selectedColumns.addAll(caseColumns);
+        selectedColumns.sort(null);
     }
 }
