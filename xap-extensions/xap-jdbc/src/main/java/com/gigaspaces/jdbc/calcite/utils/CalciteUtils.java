@@ -1,4 +1,4 @@
-package com.gigaspaces.jdbc.calcite.handlers;
+package com.gigaspaces.jdbc.calcite.utils;
 
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
@@ -33,6 +33,8 @@ public class CalciteUtils {
             case TIME_WITH_LOCAL_TIME_ZONE:
             case TIME:
                 return literal.toString(); // we use our parsers with AbstractParser.parse
+            case SYMBOL:
+                return literal.getValue();
             default:
                 throw new UnsupportedOperationException("Unsupported type: " + literal.getType().getSqlTypeName());
         }

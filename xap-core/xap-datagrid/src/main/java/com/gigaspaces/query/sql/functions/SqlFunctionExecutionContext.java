@@ -43,4 +43,6 @@ public interface SqlFunctionExecutionContext {
         return null;
     };
 
+    default String getType(){return null;}
+
 }

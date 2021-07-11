@@ -60,7 +60,6 @@ public class ConcreteTableContainer extends TableContainer {
     public QueryResult executeRead(QueryExecutionConfig config) throws SQLException {
         if (queryResult != null)
             return queryResult;
-
         String[] projectionC = createProjectionTable();
 
         try {
@@ -86,7 +85,7 @@ public class ConcreteTableContainer extends TableContainer {
                 modifiers = Modifiers.add(modifiers, Modifiers.DRY_RUN);
             }
 
-            validate();
+            validate(config);
 
             setAggregations(config.isJoinUsed());
 

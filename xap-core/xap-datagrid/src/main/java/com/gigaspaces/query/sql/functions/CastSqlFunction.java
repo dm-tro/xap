@@ -2,10 +2,12 @@ package com.gigaspaces.query.sql.functions;
 
 import com.gigaspaces.internal.utils.ObjectConverter;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,12 +26,12 @@ public class CastSqlFunction extends SqlFunction {
         types.put("DOUBLE", Double.TYPE);
         types.put("FLOAT", Float.TYPE);
         types.put("INTEGER", Integer.TYPE);
-        types.put("LONG", Long.TYPE);
-        types.put("Short", Short.TYPE);
-        types.put("TIMESTAMP", Timestamp.class);
-        types.put("DATE", LocalDateTime.class);
-        types.put("TIME", LocalDateTime.class);
-        types.put("TIMESTAMP_WITH_LOCAL_TIME_ZONE", Instant.class);
+        types.put("BIGINT", Long.TYPE);
+        types.put("SHORT", Short.TYPE);
+        types.put("TIMESTAMP", LocalDateTime.class);
+        types.put("DATE", LocalDate.class);
+        types.put("TIME", LocalTime.class);
+        types.put("DECIMAL", BigDecimal.class);
     }
 
     /**
@@ -39,13 +41,28 @@ public class CastSqlFunction extends SqlFunction {
     @Override
     public Object apply(SqlFunctionExecutionContext context) {
         assertNumberOfArguments(1, context);
-        String type = ((SqlFunctionExecutionContextWithType)context).getType();
         Object value = context.getArgument(0);
-        try {
-           return ObjectConverter.convert(value, types.get(type));
+        if (!isString(value)) {
+            throw new RuntimeException("Cast function - 1st argument must be a String: " + value);
         }
-        catch (SQLException throwable) {
-            throw new RuntimeException("Cast function - Invalid input syntax for " + value);
+        String type = context.getType();
+        try {
+            if (type.startsWith("BOOLEAN")) {
+                String boolValue = (String) value;
+                if (boolValue.equalsIgnoreCase("t") || boolValue.equalsIgnoreCase("true"))
+                    return true;
+                if (boolValue.equalsIgnoreCase("f") || boolValue.equalsIgnoreCase("false"))
+                    return false;
+                throw new RuntimeException("Cast function - Invalid input: " + boolValue + " for data type: BOOLEAN");
+            }
+            //covers cases like when type = "TIME(0)"
+            type= type.replaceAll("\\(\\d+\\)", "");
+            if(types.get(type) == null){
+                throw new RuntimeException("Cast function - casting to type " + type + " is not supported");
+            }
+            return ObjectConverter.convert(value, types.get(type));
+        } catch (SQLException throwable) {
+            throw new RuntimeException("Cast function - Invalid input: " + value + " for data type: " + type, throwable);
         }
     }
 }

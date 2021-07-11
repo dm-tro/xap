@@ -1,6 +1,7 @@
 package com.gigaspaces.jdbc.calcite.handlers;
 
 import com.gigaspaces.jdbc.QueryExecutor;
+import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.exceptions.SQLExceptionWrapper;
 import com.gigaspaces.jdbc.model.table.TableContainer;
 import com.gigaspaces.metadata.StorageType;

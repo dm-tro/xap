@@ -45,7 +45,7 @@ public class JoinQueryExecutor {
                 throw new IllegalArgumentException(e);
             }
         }
-
+        Collections.sort(orderColumns);
         JoinTablesIterator joinTablesIterator = new JoinTablesIterator(tables);
         if(config.isExplainPlan()) {
             return explain(joinTablesIterator, orderColumns, groupByColumns, isDistinct);

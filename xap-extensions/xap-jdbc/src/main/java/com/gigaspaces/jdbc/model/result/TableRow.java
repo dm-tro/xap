@@ -2,6 +2,7 @@ package com.gigaspaces.jdbc.model.result;
 
 import com.gigaspaces.internal.metadata.ITypeDesc;
 import com.gigaspaces.internal.transport.IEntryPacket;
+import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.model.table.*;
 import com.j_spaces.jdbc.builder.QueryEntryPacket;
 
@@ -148,6 +149,26 @@ public class TableRow implements Comparable<TableRow> {
         }
 
         this.groupByColumns = tempTableContainer.getGroupByColumns().toArray(new ConcreteColumn[0]);
+        this.groupByValues = new Object[this.groupByColumns.length];
+        for (int i = 0; i < this.groupByColumns.length; i++) {
+            this.groupByValues[i] = row.getPropertyValue(this.groupByColumns[i].getName());
+        }
+    }
+
+    public TableRow(TableRow row, QueryExecutor queryExecutor) {
+        this.columns = queryExecutor.getSelectedColumns().toArray(new IQueryColumn[0]);
+        this.values = new Object[this.columns.length];
+        for (int i = 0; i < this.columns.length; i++) {
+            this.values[i] = row.getPropertyValue(this.columns[i].getName());
+        }
+
+        this.orderColumns = queryExecutor.getOrderColumns().toArray(new OrderColumn[0]);
+        this.orderValues = new Object[this.orderColumns.length];
+        for (int i = 0; i < this.orderColumns.length; i++) {
+            this.orderValues[i] = row.getPropertyValue(this.orderColumns[i].getName());
+        }
+
+        this.groupByColumns = queryExecutor.getGroupByColumns().toArray(new ConcreteColumn[0]);
         this.groupByValues = new Object[this.groupByColumns.length];
         for (int i = 0; i < this.groupByColumns.length; i++) {
             this.groupByValues[i] = row.getPropertyValue(this.groupByColumns[i].getName());

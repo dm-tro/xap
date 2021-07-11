@@ -1,7 +1,8 @@
 package com.gigaspaces.jdbc.calcite;
 
 import com.gigaspaces.jdbc.QueryExecutor;
-import com.gigaspaces.jdbc.calcite.handlers.CalciteUtils;
+import com.gigaspaces.jdbc.calcite.handlers.AggregateHandler;
+import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.calcite.handlers.CaseConditionHandler;
 import com.gigaspaces.jdbc.calcite.handlers.ConditionHandler;
 import com.gigaspaces.jdbc.calcite.handlers.SingleTableProjectionHandler;
@@ -20,16 +21,14 @@ import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SelectHandler extends RelShuttleImpl {
     private final QueryExecutor queryExecutor;
     private final Map<RelNode, GSCalc> childToCalc = new HashMap<>();
     private final LocalSession session;
     private RelNode root = null;
+    private GSCalc rootCalc = null;
 
     public SelectHandler(QueryExecutor queryExecutor, LocalSession session) {
         this.queryExecutor = queryExecutor;
@@ -53,8 +52,8 @@ public class SelectHandler extends RelShuttleImpl {
         if (!childToCalc.containsKey(scan)) {
             List<String> columns = tableContainer.getAllColumnNames();
             queryExecutor.addFieldCount(columns.size());
-            for (String col : columns) {
-                tableContainer.addQueryColumn(col, null, true, 0);
+            for (int i = 0; i < columns.size(); i++) {
+                tableContainer.addQueryColumnWithoutOrdinal(columns.get(i), null, true);
             }
         }
         else{
@@ -71,9 +70,12 @@ public class SelectHandler extends RelShuttleImpl {
         }
         if(other instanceof GSCalc){
             GSCalc calc = (GSCalc) other;
+            if(rootCalc == null){
+                rootCalc = calc;
+            }
             RelNode input = calc.getInput();
             while (!(input instanceof GSJoin)
-                    && !(input instanceof GSTableScan)) {
+                    && !(input instanceof GSTableScan) && !(input instanceof GSAggregate)) {
                 if(input.getInputs().isEmpty()) {
                     break;
                 }
@@ -82,18 +84,17 @@ public class SelectHandler extends RelShuttleImpl {
             childToCalc.putIfAbsent(input, calc);
         }
         RelNode result = super.visit(other);
-        if(other instanceof GSJoin){
+        if (other instanceof GSJoin) {
             handleJoin((GSJoin) other);
-        }
-        if( other instanceof GSValues ){
+        } else if (other instanceof GSValues) {
             GSValues gsValues = (GSValues) other;
             handleValues(gsValues);
-        }
-
-        if(other instanceof GSSort){
+        } else if (other instanceof GSSort) {
             handleSort((GSSort) other);
         }
-
+        if(other instanceof GSAggregate){
+            handleAggregate((GSAggregate) other);
+        }
 //        else {
 //            throw new UnsupportedOperationException("RelNode of type " + other.getClass().getName() + " are not supported yet");
 //        }
@@ -112,6 +113,10 @@ public class SelectHandler extends RelShuttleImpl {
                     FunctionCallColumn functionCallColumn = getFunctionCallColumn(program, (RexCall) node);
                     queryExecutor.addColumn(functionCallColumn);
                 }
+//                if (node instanceof RexLiteral){
+//                    LiteralColumn literalColumn = new LiteralColumn(CalciteUtils.getValue((RexLiteral) node));
+//                    queryExecutor.addColumn(literalColumn);
+//                }
             }
         }
     }
@@ -142,7 +147,6 @@ public class SelectHandler extends RelShuttleImpl {
             RelFieldCollation.Direction direction = relCollation.getDirection();
             RelFieldCollation.NullDirection nullDirection = relCollation.nullDirection;
             String columnAlias = sort.getRowType().getFieldNames().get(fieldIndex);
-//            TableContainer table = queryExecutor.getTableByColumnIndex(fieldIndex);
             String columnName = columnAlias;
             boolean isVisible = false;
             RelNode parent = this.stack.peek();
@@ -154,9 +158,7 @@ public class SelectHandler extends RelShuttleImpl {
                     columnName = program.getInputRowType().getFieldNames().get(program.getSourceField(field.getIndex()));
                 }
             }
-            //TODO: @sagiv not so sure about this, because 'columnName' can be alias from sub-query, or
-            // Ambiguous when using join for example..
-            TableContainer table = getTableByColumnName(columnName);
+            TableContainer table = queryExecutor.getTableByColumnName(columnName);
             OrderColumn orderColumn = new OrderColumn(new ConcreteColumn(columnName,null, columnAlias,
                     isVisible, table, columnCounter++), !direction.isDescending(),
                     nullDirection == RelFieldCollation.NullDirection.LAST);
@@ -164,20 +166,24 @@ public class SelectHandler extends RelShuttleImpl {
         }
     }
 
-    private TableContainer getTableByColumnName(String name) {
-        TableContainer toReturn = null;
-        for(TableContainer tableContainer : this.queryExecutor.getTables()) {
-            if(tableContainer.hasColumn(name)) {
-                if (toReturn == null) {
-                    toReturn = tableContainer;
-                } else {
-                    throw new IllegalArgumentException("Ambiguous column name [" + name + "]");
-                }
-            }
+    private void handleAggregate(GSAggregate gsAggregate) {
+        AggregateHandler.instance().apply(gsAggregate, queryExecutor, root.equals(gsAggregate) || root.getInput(0).equals(gsAggregate));
+        if(childToCalc.containsKey(gsAggregate)){
+            handleCalcFromAggregate(childToCalc.get(gsAggregate));
         }
-        return toReturn;
     }
 
+    private void handleCalcFromAggregate(GSCalc other){
+        RexProgram program = other.getProgram();
+        List<String> outputFields = program.getOutputRowType().getFieldNames();
+        for (int i = 0; i < outputFields.size(); i++) {
+            String outputField = outputFields.get(i);
+            if(!outputField.startsWith("EXPR") && other.equals(rootCalc)){
+                IQueryColumn qc = queryExecutor.getColumnByColumnName(outputField);
+                queryExecutor.addColumn(qc);
+            }
+        }
+    }
 
     private void handleJoin(GSJoin join) {
         RexCall rexCall = (RexCall) join.getCondition();
@@ -192,8 +198,8 @@ public class SelectHandler extends RelShuttleImpl {
         TableContainer rightContainer = queryExecutor.getTableByColumnIndex(rightIndex);
         TableContainer leftContainer = queryExecutor.getTableByColumnIndex(leftIndex);
         //TODO: @sagiv needed?- its already in the tables.
-        IQueryColumn rightColumn = rightContainer.addQueryColumn(rColumn, null, false, -1);
-        IQueryColumn leftColumn = leftContainer.addQueryColumn(lColumn, null, false, -1);
+        IQueryColumn rightColumn = rightContainer.addQueryColumnWithoutOrdinal(rColumn, null, false);
+        IQueryColumn leftColumn = leftContainer.addQueryColumnWithoutOrdinal(lColumn, null, false);
         rightContainer.setJoinInfo(new JoinInfo(leftColumn, rightColumn, JoinInfo.JoinType.getType(join.getJoinType())));
         if (leftContainer.getJoinedTable() == null) {
             if (!rightContainer.isJoined()) {
@@ -224,7 +230,7 @@ public class SelectHandler extends RelShuttleImpl {
         List<String> inputFields = program.getInputRowType().getFieldNames();
         List<String> outputFields = program.getOutputRowType().getFieldNames();
         queryExecutor.addFieldCount(outputFields.size());
-        new SingleTableProjectionHandler(program, tableContainer, other.equals(root), queryExecutor).project();
+        new SingleTableProjectionHandler(program, tableContainer, other.equals(rootCalc), queryExecutor).project();
         ConditionHandler conditionHandler = new ConditionHandler(program, queryExecutor, inputFields, tableContainer);
         if (program.getCondition() != null) {
             program.getCondition().accept(conditionHandler);
@@ -239,21 +245,23 @@ public class SelectHandler extends RelShuttleImpl {
         List<String> inputFields = program.getInputRowType().getFieldNames();
         List<String> outputFields = program.getOutputRowType().getFieldNames();
         List<RexLocalRef> projects = program.getProjectList();
-        for (int i = 0; i < projects.size(); i++) {
-            RexLocalRef localRef = projects.get(i);
-            RexNode node = program.getExprList().get(localRef.getIndex());
-            if (node.isA(SqlKind.INPUT_REF)) {
-                IQueryColumn qc = queryExecutor.getColumnByColumnIndex(program.getSourceField(i));
-                queryExecutor.getVisibleColumns().add(qc);
-            } else if (node.isA(SqlKind.CASE)) {
-                RexCall call = (RexCall) node;
-                CaseColumn caseColumn = new CaseColumn(outputFields.get(i), CalciteUtils.getJavaType(call), i);
-                CaseConditionHandler caseHandler = new CaseConditionHandler(program, queryExecutor, inputFields,
-                        null, caseColumn);
-                caseHandler.visitCall(call);
-                queryExecutor.addCaseColumn(caseColumn);
-            } else {
-                throw new IllegalStateException("Unexpected node kind expected CASE / INPUT_REF but was [" + node.getKind() + "]");
+        if(other.equals(rootCalc)) {
+            for (int i = 0; i < projects.size(); i++) {
+                RexLocalRef localRef = projects.get(i);
+                RexNode node = program.getExprList().get(localRef.getIndex());
+                if (node.isA(SqlKind.INPUT_REF)) {
+                    IQueryColumn qc = queryExecutor.getColumnByColumnIndex(program.getSourceField(i));
+                    queryExecutor.addColumn(qc);
+                } else if (node.isA(SqlKind.CASE)) {
+                    RexCall call = (RexCall) node;
+                    CaseColumn caseColumn = new CaseColumn(outputFields.get(i), CalciteUtils.getJavaType(call), i);
+                    CaseConditionHandler caseHandler = new CaseConditionHandler(program, queryExecutor, inputFields,
+                            null, caseColumn);
+                    caseHandler.visitCall(call);
+                    queryExecutor.addCaseColumn(caseColumn);
+                } else {
+                    throw new IllegalStateException("Unexpected node kind expected CASE / INPUT_REF but was [" + node.getKind() + "]");
+                }
             }
         }
 

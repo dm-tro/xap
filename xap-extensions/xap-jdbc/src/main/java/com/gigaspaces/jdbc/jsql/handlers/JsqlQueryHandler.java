@@ -49,7 +49,7 @@ public class JsqlQueryHandler {
         statement.accept(new StatementVisitorAdapter() {
             @Override
             public void visit(ExplainStatement explainStatement) {
-                QueryExecutionConfig config = new QueryExecutionConfig(true, explainStatement.getOption(ExplainStatement.OptionType.VERBOSE) != null);
+                QueryExecutionConfig config = new QueryExecutionConfig(true, explainStatement.getOption(ExplainStatement.OptionType.VERBOSE) != null).setCalcite(false);
                 QueryExecutor qE = new QueryExecutor(space, config, preparedValues);
                 ExplainPlanQueryResult res;
                 try {

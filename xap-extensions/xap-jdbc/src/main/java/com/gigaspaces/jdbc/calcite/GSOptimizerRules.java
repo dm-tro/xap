@@ -49,10 +49,10 @@ public class GSOptimizerRules {
         CoreRules.AGGREGATE_REMOVE,
         CoreRules.UNION_TO_DISTINCT,
         CoreRules.PROJECT_REMOVE,
-        CoreRules.PROJECT_AGGREGATE_MERGE,
+//        CoreRules.PROJECT_AGGREGATE_MERGE,
         CoreRules.AGGREGATE_JOIN_TRANSPOSE,
         CoreRules.AGGREGATE_MERGE,
-        CoreRules.AGGREGATE_PROJECT_MERGE,
+//        CoreRules.AGGREGATE_PROJECT_MERGE,
         CoreRules.CALC_REMOVE,
         CoreRules.SORT_REMOVE
     );
@@ -91,7 +91,8 @@ public class GSOptimizerRules {
         GSProjectRule.INSTANCE,
         GSJoinRule.INSTANCE,
         GSSortRule.INSTANCE,
-        GSValuesRule.INSTANCE
+        GSValuesRule.INSTANCE,
+        GSAggregateRule.INSTANCE
     );
 
     public static final List<RelOptRule> GS_CALC_RULES = Arrays.asList(

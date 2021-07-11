@@ -1,15 +1,15 @@
 package com.gigaspaces.jdbc;
 
+import com.gigaspaces.jdbc.exceptions.ColumnNotFoundException;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
-import com.gigaspaces.jdbc.model.result.LocalSingleRowQueryResult;
-import com.gigaspaces.jdbc.model.result.QueryResult;
-import com.gigaspaces.jdbc.model.result.TableRow;
-import com.gigaspaces.jdbc.model.result.TableRowFactory;
+import com.gigaspaces.jdbc.model.result.*;
 import com.gigaspaces.jdbc.model.table.*;
 import com.j_spaces.core.IJSpace;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class QueryExecutor {
     private final List<TableContainer> tables = new ArrayList<>();
@@ -22,6 +22,8 @@ public class QueryExecutor {
     private boolean isAllColumnsSelected = false;
     private final LinkedList<Integer> fieldCountList = new LinkedList<>();
     private final List<CaseColumn> caseColumns = new ArrayList<>();
+    private int columnCounter = 0;
+    private final List<ConcreteColumn> groupByColumns = new ArrayList<>();
 
 
     public QueryExecutor(IJSpace space, QueryExecutionConfig config, Object[] preparedValues) {
@@ -31,7 +33,7 @@ public class QueryExecutor {
     }
 
     public QueryExecutor(IJSpace space, Object[] preparedValues) {
-        this(space, new QueryExecutionConfig(), preparedValues);
+        this(space, new QueryExecutionConfig().setCalcite(false), preparedValues);
     }
 
     public QueryResult execute() throws SQLException {
@@ -46,8 +48,13 @@ public class QueryExecutor {
             }
         }
         if (tables.size() == 1) { //Simple Query
-            QueryResult queryResult = tables.get(0).executeRead(config);
+            QueryResult queryResult =  tables.get(0).executeRead(config);
             queryResult.addCaseColumnsToResults(caseColumns);
+            final List<IQueryColumn> selectedColumns = getSelectedColumns();
+            if(!selectedColumns.isEmpty() && config.isCalcite()){
+                List<TableRow> rows = queryResult.getRows().stream().map(row -> TableRowFactory.createProjectedTableRow(row, this)).collect(Collectors.toList());
+                return new ConcreteQueryResult(selectedColumns, rows);
+            }
             return queryResult;
         }
         JoinQueryExecutor joinE = new JoinQueryExecutor(this);
@@ -106,6 +113,7 @@ public class QueryExecutor {
 
     public void addColumn(IQueryColumn column, boolean isVisible) {
         if (isVisible) {
+            column.setColumnOrdinal(columnCounter++);
             visibleColumns.add(column);
         } else {
             invisibleColumns.add(column);
@@ -117,12 +125,8 @@ public class QueryExecutor {
     }
 
     public void addAggregationColumn(AggregationColumn aggregationColumn) {
+        aggregationColumn.setColumnOrdinal(columnCounter++);
         this.aggregationColumns.add(aggregationColumn);
-    }
-
-    public void addTable(TableContainer tableContainer){
-        tables.add(tableContainer);
-        addFieldCount(tableContainer.getVisibleColumns().size());
     }
 
     public TableContainer getTableByColumnIndex(int columnIndex){
@@ -152,5 +156,45 @@ public class QueryExecutor {
 
     public void addCaseColumn(CaseColumn caseColumn) {
         this.caseColumns.add(caseColumn);
+    }
+
+    public TableContainer getTableByColumnName(String name) {
+        TableContainer toReturn = null;
+        for(TableContainer tableContainer : getTables()) {
+            if(tableContainer.hasColumn(name)) {
+                if (toReturn == null) {
+                    toReturn = tableContainer;
+                } else {
+                    throw new IllegalArgumentException("Ambiguous column name [" + name + "]");
+                }
+            }
+        }
+        if(toReturn == null){
+            throw new ColumnNotFoundException("Column " + name + " wasn't found in any table");
+        }
+        return toReturn;
+    }
+
+    public IQueryColumn getColumnByColumnName(String column) {
+        TableContainer tableContainer = getTableByColumnName(column);
+        return tableContainer.getAllQueryColumns().stream().filter(qc -> qc.getName().equals(column)).findFirst().orElse(null);
+    }
+
+    public List<IQueryColumn> getSelectedColumns(){
+        return Stream.concat(getVisibleColumns().stream(), getAggregationColumns().stream()).sorted().collect(Collectors.toList());
+    }
+
+    public List<IQueryColumn> getOrderColumns() {
+        List<IQueryColumn> result = new ArrayList<>();
+        tables.forEach(table -> result.addAll(table.getOrderColumns()));
+        return result;
+    }
+
+    public List<ConcreteColumn> getGroupByColumns() {
+        return this.groupByColumns;
+    }
+
+    public void addGroupByColumn(ConcreteColumn groupByColumn){
+        this.groupByColumns.add(groupByColumn);
     }
 }
