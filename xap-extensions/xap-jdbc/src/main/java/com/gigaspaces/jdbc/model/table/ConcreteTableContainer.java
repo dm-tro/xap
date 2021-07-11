@@ -60,7 +60,9 @@ public class ConcreteTableContainer extends TableContainer {
     public QueryResult executeRead(QueryExecutionConfig config) throws SQLException {
         if (queryResult != null)
             return queryResult;
-
+        if(isAllColumns()) {
+            fillAllColumns();
+        }
         String[] projectionC = createProjectionTable();
 
         try {
@@ -86,7 +88,7 @@ public class ConcreteTableContainer extends TableContainer {
                 modifiers = Modifiers.add(modifiers, Modifiers.DRY_RUN);
             }
 
-            validate();
+            validate(config);
 
             setAggregations(config.isJoinUsed());
 
@@ -158,7 +160,7 @@ public class ConcreteTableContainer extends TableContainer {
 
     private void setGroupByAggregation() {
         //groupBy in server
-        List<ConcreteColumn> groupByColumns = getGroupByColumns();
+        List<IQueryColumn> groupByColumns = getGroupByColumns();
         if(!groupByColumns.isEmpty()){
             int groupByColumnsCount = groupByColumns.size();
             String[] groupByColumnsArray = new String[ groupByColumnsCount ];

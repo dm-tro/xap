@@ -15,7 +15,7 @@ public class FunctionCallColumn implements IQueryColumn{
     protected final String functionName;
     protected final String columnAlias;
     protected final boolean isVisible;
-    protected final int columnOrdinal;
+    protected int columnOrdinal;
     private LocalSession session;
     protected final String type;
 
@@ -47,6 +47,11 @@ public class FunctionCallColumn implements IQueryColumn{
     @Override
     public int getColumnOrdinal() {
         return columnOrdinal;
+    }
+
+    @Override
+    public void setColumnOrdinal(int ordinal) {
+        this.columnOrdinal = ordinal;
     }
 
     @Override

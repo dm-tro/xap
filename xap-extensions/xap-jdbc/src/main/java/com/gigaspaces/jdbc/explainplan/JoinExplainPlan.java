@@ -6,6 +6,7 @@ import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.result.Cursor;
 import com.gigaspaces.jdbc.model.table.ConcreteColumn;
 import com.gigaspaces.jdbc.model.table.ConcreteTableContainer;
+import com.gigaspaces.jdbc.model.table.IQueryColumn;
 import com.gigaspaces.jdbc.model.table.OrderColumn;
 
 import java.util.List;
@@ -15,7 +16,7 @@ public class JoinExplainPlan extends JdbcExplainPlan {
     private final JoinInfo joinInfo;
     private List<String> selectColumns;
     private List<OrderColumn> orderColumns;
-    private List<ConcreteColumn> groupByColumns;
+    private List<IQueryColumn> groupByColumns;
     private boolean distinct;
     private final JdbcExplainPlan left;
     private final JdbcExplainPlan right;
@@ -34,7 +35,7 @@ public class JoinExplainPlan extends JdbcExplainPlan {
         this.orderColumns = orderColumns;
     }
 
-    public void setGroupByColumns(List<ConcreteColumn> groupByColumns) {
+    public void setGroupByColumns(List<IQueryColumn> groupByColumns) {
         this.groupByColumns = groupByColumns;
     }
 
@@ -54,7 +55,7 @@ public class JoinExplainPlan extends JdbcExplainPlan {
                 formatter.line("OrderBy: " + orderColumns.stream().map(OrderColumn::toString).collect(Collectors.joining(", ")));
             }
             if (groupByColumns != null && !groupByColumns.isEmpty()) {
-                formatter.line("GroupBy: " + groupByColumns.stream().map(ConcreteColumn::toString).collect(Collectors.joining(", ")));
+                formatter.line("GroupBy: " + groupByColumns.stream().map(IQueryColumn::toString).collect(Collectors.joining(", ")));
             }
             formatter.line(String.format("Join condition: (%s = %s)", joinInfo.getLeftColumn(), joinInfo.getRightColumn()));
             formatter.withPrefix("|", () -> {
