@@ -18,7 +18,7 @@ public class TableRowUtils {
         IQueryColumn[] rowsColumns = selectedColumns.toArray(new IQueryColumn[0]);
         OrderColumn[] firstRowOrderColumns = tableRows.get(0).getOrderColumns();
         Object[] firstRowOrderValues = tableRows.get(0).getOrderValues();
-        ConcreteColumn[] firstRowGroupByColumns = tableRows.get(0).getGroupByColumns();
+        IQueryColumn[] firstRowGroupByColumns = tableRows.get(0).getGroupByColumns();
         Object[] firstRowGroupByValues = tableRows.get(0).getGroupByValues();
 
         Object[] values = new Object[rowsColumns.length];

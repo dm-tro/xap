@@ -12,14 +12,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class TableContainer {
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
 
+public abstract class TableContainer {
     private final List<OrderColumn> orderColumns = new ArrayList<>();
     private final List<AggregationColumn> aggregationColumns = new ArrayList<>();
-    private final List<ConcreteColumn> groupByColumns = new ArrayList<>();
+    private final List<IQueryColumn> groupByColumns = new ArrayList<>();
     protected JoinInfo joinInfo;
     private boolean distinct;
     private Expression exprTree;
+    private boolean allColumns = true;
 
     public abstract QueryResult executeRead(QueryExecutionConfig config) throws SQLException;
 
@@ -28,6 +30,10 @@ public abstract class TableContainer {
     public abstract List<IQueryColumn> getVisibleColumns();
 
     public abstract Set<IQueryColumn> getInvisibleColumns();
+
+    public IQueryColumn addQueryColumnWithoutOrdinal(String columnName, String columnAlias, boolean isVisible){
+        return addQueryColumn(columnName, columnAlias, isVisible, EMPTY_ORDINAL);
+    }
 
     public List<IQueryColumn> getAllQueryColumns() {
         return Stream.concat(getVisibleColumns().stream(), getInvisibleColumns().stream()).collect(Collectors.toList());
@@ -93,14 +99,14 @@ public abstract class TableContainer {
         this.orderColumns.add(orderColumn);
     }
 
-    public void addGroupByColumns(ConcreteColumn groupByColumn) {
+    public void addGroupByColumns(IQueryColumn groupByColumn) {
         this.groupByColumns.add(groupByColumn);
         if( !groupByColumn.isVisible() ) {
             this.getInvisibleColumns().add(groupByColumn);
         }
     }
 
-    public List<ConcreteColumn> getGroupByColumns() {
+    public List<IQueryColumn> getGroupByColumns() {
         return groupByColumns;
     }
 
@@ -136,10 +142,21 @@ public abstract class TableContainer {
         this.distinct = distinct;
     }
 
-    protected void validate() {
+    public void fillAllColumns(){
+        if(!getSelectedColumns().isEmpty()){
+            return;
+        }
+        // select *
+        List<String> columns = getAllColumnNames();
+        for (int i = 0; i < columns.size(); i++) {
+            String column = columns.get(i);
+            addQueryColumn(column, null, true, i);
+        }
+    }
 
-        validateGroupBy();
-
+    protected void validate(QueryExecutionConfig config) {
+        if(!config.isCalcite())
+            validateGroupBy();
         //TODO: block operation not supported -- see AggregationsUtil.convertAggregationResult
         if (hasAggregationFunctions() && hasOrderColumns()) {
             throw new IllegalArgumentException("Column [" + getOrderColumns().get(0).getAlias() + "] must appear in the " +
@@ -150,33 +167,32 @@ public abstract class TableContainer {
 
 
     private void validateGroupBy() {
-
-        if( hasAggregationFunctions() ){
+        if( hasAggregationFunctions()){
             List<IQueryColumn> visibleColumns = getVisibleColumns();
-            List<ConcreteColumn> groupByColumns = getGroupByColumns();
-
             if( visibleColumns.isEmpty() ){
                 return;
             }
-
-            List<String> groupByColumnNames = new ArrayList<>();
-            for( IQueryColumn groupByColumn : groupByColumns ){
-                groupByColumnNames.add( groupByColumn.getName() );
-            }
-
+            List<String> groupByColumnNames = getGroupByColumns().stream().map(IQueryColumn::getName).collect(Collectors.toList());
             List<String> missingVisibleColumnNames = new ArrayList<>();
-            for( IQueryColumn visibleColumn : visibleColumns ){
+            for(IQueryColumn visibleColumn : visibleColumns){
                 String visibleColumnName = visibleColumn.getName();
-                if( !groupByColumnNames.contains( visibleColumnName ) ){
+                if(!groupByColumnNames.contains(visibleColumnName)){
                     missingVisibleColumnNames.add( visibleColumnName );
                 }
             }
-
-            if( !missingVisibleColumnNames.isEmpty() ){
+            if(!missingVisibleColumnNames.isEmpty()){
                 throw new IllegalArgumentException( ( missingVisibleColumnNames.size() == 1 ? "Column" : "Columns" ) + " " +
                         Arrays.toString( missingVisibleColumnNames.toArray( new String[0] ) ) + " must appear in the " +
                         "GROUP BY clause or be used in an aggregate function");
             }
         }
+    }
+
+    public boolean isAllColumns() {
+        return allColumns;
+    }
+
+    public void setAllColumns(boolean allColumns) {
+        this.allColumns = allColumns;
     }
 }

@@ -2,6 +2,7 @@ package com.gigaspaces.jdbc.model.result;
 
 import com.gigaspaces.internal.metadata.ITypeDesc;
 import com.gigaspaces.internal.transport.IEntryPacket;
+import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.model.table.*;
 import com.j_spaces.jdbc.builder.QueryEntryPacket;
 
@@ -15,7 +16,7 @@ public class TableRow implements Comparable<TableRow> {
     private final Object[] values;
     private final OrderColumn[] orderColumns;
     private final Object[] orderValues;
-    private final ConcreteColumn[] groupByColumns;
+    private final IQueryColumn[] groupByColumns;
     private final Object[] groupByValues;
 
     public TableRow(IQueryColumn[] columns, Object... values) {
@@ -23,7 +24,7 @@ public class TableRow implements Comparable<TableRow> {
     }
 
     public TableRow(IQueryColumn[] columns, Object[] values, OrderColumn[] orderColumns, Object[] orderValues,
-                    ConcreteColumn[] groupByColumns, Object[] groupByValues) {
+                    IQueryColumn[] groupByColumns, Object[] groupByValues) {
         this.columns = columns;
         this.values = values;
 
@@ -55,7 +56,7 @@ public class TableRow implements Comparable<TableRow> {
 
     TableRow(IEntryPacket entryPacket, ConcreteTableContainer tableContainer) {
         final List<OrderColumn> orderColumns = tableContainer.getOrderColumns();
-        final List<ConcreteColumn> groupByColumns = tableContainer.getGroupByColumns();
+        final List<IQueryColumn> groupByColumns = tableContainer.getGroupByColumns();
         boolean isQueryEntryPacket = entryPacket instanceof QueryEntryPacket;
         if (tableContainer.hasAggregationFunctions() && isQueryEntryPacket) {
             QueryEntryPacket queryEntryPacket = ((QueryEntryPacket) entryPacket);
@@ -90,7 +91,7 @@ public class TableRow implements Comparable<TableRow> {
             orderValues[i] = orderColumns.get(i).getValue(entryPacket);
         }
 
-        this.groupByColumns = groupByColumns.toArray(new ConcreteColumn[0]);
+        this.groupByColumns = groupByColumns.toArray(new IQueryColumn[0]);
         ITypeDesc typeDescriptor = entryPacket.getTypeDescriptor();
         groupByValues = new Object[ typeDescriptor != null ? this.groupByColumns.length : 0];
         if( !isQueryEntryPacket ) {
@@ -100,7 +101,7 @@ public class TableRow implements Comparable<TableRow> {
         }
     }
 
-    TableRow(List<IQueryColumn> columns, List<OrderColumn> orderColumns, List<ConcreteColumn> groupByColumns) {
+    TableRow(List<IQueryColumn> columns, List<OrderColumn> orderColumns, List<IQueryColumn> groupByColumns) {
         this.columns = columns.toArray(new IQueryColumn[0]);
         values = new Object[this.columns.length];
         for (int i = 0; i < this.columns.length; i++) {
@@ -148,6 +149,26 @@ public class TableRow implements Comparable<TableRow> {
         }
 
         this.groupByColumns = tempTableContainer.getGroupByColumns().toArray(new ConcreteColumn[0]);
+        this.groupByValues = new Object[this.groupByColumns.length];
+        for (int i = 0; i < this.groupByColumns.length; i++) {
+            this.groupByValues[i] = row.getPropertyValue(this.groupByColumns[i].getName());
+        }
+    }
+
+    public TableRow(TableRow row, QueryExecutor queryExecutor) {
+        this.columns = queryExecutor.getSelectedColumns().toArray(new IQueryColumn[0]);
+        this.values = new Object[this.columns.length];
+        for (int i = 0; i < this.columns.length; i++) {
+            this.values[i] = row.getPropertyValue(this.columns[i].getName());
+        }
+
+        this.orderColumns = queryExecutor.getOrderColumns().toArray(new OrderColumn[0]);
+        this.orderValues = new Object[this.orderColumns.length];
+        for (int i = 0; i < this.orderColumns.length; i++) {
+            this.orderValues[i] = row.getPropertyValue(this.orderColumns[i].getName());
+        }
+
+        this.groupByColumns = queryExecutor.getGroupByColumns().toArray(new ConcreteColumn[0]);
         this.groupByValues = new Object[this.groupByColumns.length];
         for (int i = 0; i < this.groupByColumns.length; i++) {
             this.groupByValues[i] = row.getPropertyValue(this.groupByColumns[i].getName());
@@ -213,7 +234,7 @@ public class TableRow implements Comparable<TableRow> {
         return distinctValues;
     }
 
-    ConcreteColumn[] getGroupByColumns() {
+    IQueryColumn[] getGroupByColumns() {
         return groupByColumns;
     }
 

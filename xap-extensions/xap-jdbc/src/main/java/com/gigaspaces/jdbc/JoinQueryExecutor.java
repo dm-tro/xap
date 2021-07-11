@@ -18,11 +18,15 @@ public class JoinQueryExecutor {
     private final List<AggregationColumn> aggregationColumns;
     private final List<IQueryColumn> allQueryColumns;
     private final List<IQueryColumn> selectedQueryColumns;
+    private final List<IQueryColumn> groupByColumns = new ArrayList<>();
+    private final List<OrderColumn> orderColumns = new ArrayList<>();
 
     public JoinQueryExecutor(QueryExecutor queryExecutor) {
         this.tables = queryExecutor.getTables();
+        tables.forEach(table -> this.groupByColumns.addAll(table.getGroupByColumns()));
+        tables.forEach(table -> this.orderColumns.addAll(table.getOrderColumns()));
         this.invisibleColumns = queryExecutor.getInvisibleColumns();
-        this.visibleColumns = queryExecutor.getVisibleColumns();
+        this.visibleColumns = (queryExecutor.getVisibleColumns().isEmpty() && queryExecutor.getAggregationColumns().isEmpty()) ? this.groupByColumns : queryExecutor.getVisibleColumns();
         this.config = queryExecutor.getConfig();
         this.config.setJoinUsed(true);
         this.aggregationColumns = queryExecutor.getAggregationColumns();
@@ -31,21 +35,20 @@ public class JoinQueryExecutor {
     }
 
     public QueryResult execute() {
-        final List<OrderColumn> orderColumns = new ArrayList<>();
-        final List<ConcreteColumn> groupByColumns = new ArrayList<>();
         boolean isDistinct = false;
         for (TableContainer table : tables) {
             try {
                 table.executeRead(config);
-                orderColumns.addAll(table.getOrderColumns());
-                groupByColumns.addAll(table.getGroupByColumns());
                 isDistinct |= table.isDistinct();
             } catch (SQLException e) {
                 e.printStackTrace();
                 throw new IllegalArgumentException(e);
             }
         }
-
+        Collections.sort(orderColumns); //TODO see if necessary
+        if(visibleColumns.isEmpty()){
+            visibleColumns.addAll(groupByColumns);
+        }
         JoinTablesIterator joinTablesIterator = new JoinTablesIterator(tables);
         if(config.isExplainPlan()) {
             return explain(joinTablesIterator, orderColumns, groupByColumns, isDistinct);
@@ -87,7 +90,7 @@ public class JoinQueryExecutor {
     }
 
     private QueryResult explain(JoinTablesIterator joinTablesIterator, List<OrderColumn> orderColumns,
-                                List<ConcreteColumn> groupByColumns, boolean isDistinct) {
+                                List<IQueryColumn> groupByColumns, boolean isDistinct) {
         Stack<TableContainer> stack = new Stack<>();
         TableContainer current = joinTablesIterator.getStartingPoint();
         stack.push(current);

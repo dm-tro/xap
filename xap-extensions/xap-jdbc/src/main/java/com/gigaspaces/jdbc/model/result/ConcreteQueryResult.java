@@ -2,6 +2,7 @@ package com.gigaspaces.jdbc.model.result;
 
 import com.gigaspaces.internal.transport.IEntryPacket;
 import com.gigaspaces.jdbc.model.table.ConcreteTableContainer;
+import com.gigaspaces.jdbc.model.table.IQueryColumn;
 import com.gigaspaces.jdbc.model.table.TableContainer;
 import com.j_spaces.jdbc.query.IQueryResultSet;
 
@@ -16,6 +17,12 @@ public class ConcreteQueryResult extends QueryResult{
         super(tableContainer.getSelectedColumns());
         this.tableContainer = tableContainer;
         this.rows = res.stream().map(x -> TableRowFactory.createTableRowFromIEntryPacket(x, tableContainer)).collect(Collectors.toList());
+    }
+
+    public ConcreteQueryResult(List<IQueryColumn> selectedColumns, List<TableRow> rows){
+        super(selectedColumns);
+        this.tableContainer = null;
+        this.rows = rows;
     }
 
     @Override

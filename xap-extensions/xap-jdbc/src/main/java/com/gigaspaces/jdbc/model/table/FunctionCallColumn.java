@@ -24,7 +24,7 @@ public class FunctionCallColumn implements IQueryColumn {
     protected final String functionName;
     protected final String columnAlias;
     protected final boolean isVisible;
-    protected final int columnOrdinal;
+    protected int columnOrdinal;
     private final LocalSession session;
     protected final String type;
 
@@ -53,6 +53,11 @@ public class FunctionCallColumn implements IQueryColumn {
     @Override
     public int getColumnOrdinal() {
         return columnOrdinal;
+    }
+
+    @Override
+    public void setColumnOrdinal(int ordinal) {
+        this.columnOrdinal = ordinal;
     }
 
     @Override
@@ -208,7 +213,7 @@ public class FunctionCallColumn implements IQueryColumn {
         } else {
             throw new UnsupportedOperationException("Unsupported TemporalAccessor object: " + temporalAccessor.getClass());
         }
-        
+
         switch (timeunit) {
             case SECOND:
                 return localDateTime.getSecond();
@@ -259,7 +264,7 @@ public class FunctionCallColumn implements IQueryColumn {
         calendar.clear();
         calendar.setTime(date);
 
-        
+
         switch (timeunit) {
             case SECOND:
                 return calendar.get(Calendar.SECOND);
