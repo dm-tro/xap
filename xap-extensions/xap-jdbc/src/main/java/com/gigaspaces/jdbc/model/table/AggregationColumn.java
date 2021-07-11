@@ -13,7 +13,7 @@ public class AggregationColumn implements IQueryColumn {
     private final boolean isVisible;
     private final boolean allColumns;
     private final IQueryColumn queryColumn;
-    private final int columnOrdinal;
+    private int columnOrdinal;
 
     public AggregationColumn(AggregationFunctionType functionType, String functionAlias, IQueryColumn queryColumn,
                              boolean isVisible, boolean allColumns, int columnOrdinal) {
@@ -83,6 +83,11 @@ public class AggregationColumn implements IQueryColumn {
     @Override
     public int getColumnOrdinal() {
         return this.columnOrdinal;
+    }
+
+    @Override
+    public void setColumnOrdinal(int ordinal) {
+        this.columnOrdinal = ordinal;
     }
 
     public String getName() {

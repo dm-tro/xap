@@ -40,7 +40,8 @@ public class SingleTableProjectionHandler extends RexShuttle {
                 RexInputRef inputRef = (RexInputRef) node;
                 String alias = outputFields.get(i);
                 String originalName = inputFields.get(inputRef.getIndex());
-                tableContainer.addQueryColumn(originalName, alias, true, i);
+                if(!originalName.startsWith("EXPR"))
+                    tableContainer.addQueryColumn(originalName, alias, true, isRoot ? i : 0);
             }
             else if(node instanceof RexCall){
                 RexCall call = (RexCall) node;
@@ -91,7 +92,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
                 if (rexNode.isA(SqlKind.INPUT_REF)) {
                     RexInputRef rexInputRef = (RexInputRef) rexNode;
                     String column = inputFields.get(rexInputRef.getIndex());
-                    queryColumns.add(tableContainer.addQueryColumn(column, null, false, -1));
+                    queryColumns.add(tableContainer.addQueryColumnWithoutOrdinal(column, null, false));
                 }
                 else if (rexNode.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) rexNode;
@@ -105,9 +106,5 @@ public class SingleTableProjectionHandler extends RexShuttle {
         CaseConditionHandler caseHandler = new CaseConditionHandler(program, queryExecutor, inputFields,
                 tableContainer, caseColumn);
         caseHandler.visitCall(call);
-    }
-
-    public boolean isRoot(){
-        return isRoot;
     }
 }

@@ -3,9 +3,13 @@ package com.gigaspaces.jdbc.model.table;
 import com.gigaspaces.internal.transport.IEntryPacket;
 
 public interface IQueryColumn extends Comparable<IQueryColumn> {
+    int EMPTY_ORDINAL = -1;
+
     String UUID_COLUMN = "UID";
 
     int getColumnOrdinal();
+
+    void setColumnOrdinal(int ordinal);
 
     String getName();
 

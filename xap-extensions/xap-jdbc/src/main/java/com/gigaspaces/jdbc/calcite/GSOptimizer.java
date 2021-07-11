@@ -86,7 +86,10 @@ public class GSOptimizer {
                         , SqlLibraryOperatorTableFactory.INSTANCE.getOperatorTable(SqlLibrary.STANDARD, SqlLibrary.POSTGRESQL)
                 ),
             catalogReader, typeFactory,
-            SqlValidator.Config.DEFAULT.withSqlConformance( LENIENT ).withDefaultNullCollation(NullCollation.FIRST));
+            SqlValidator.Config.DEFAULT
+                    .withSqlConformance(LENIENT)
+                    .withDefaultNullCollation(NullCollation.FIRST)
+                    .withIdentifierExpansion(true));
 
         planner = new VolcanoPlanner(RelOptCostImpl.FACTORY, Contexts.of(CONNECTION_CONFIG));
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);

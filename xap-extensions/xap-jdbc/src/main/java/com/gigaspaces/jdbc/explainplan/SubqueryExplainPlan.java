@@ -17,11 +17,11 @@ public class SubqueryExplainPlan extends JdbcExplainPlan {
     private final String tempViewName;
     private final Expression exprTree;
     private final List<OrderColumn> orderColumns;
-    private final List<ConcreteColumn> groupByColumns;
+    private final List<IQueryColumn> groupByColumns;
     private final boolean distinct;
 
     public SubqueryExplainPlan(List<IQueryColumn> visibleColumns, String name, JdbcExplainPlan explainPlanInfo,
-                               Expression exprTree, List<OrderColumn> orderColumns, List<ConcreteColumn> groupByColumns,
+                               Expression exprTree, List<OrderColumn> orderColumns, List<IQueryColumn> groupByColumns,
                                boolean isDistinct) {
         this.tempViewName = name;
         this.visibleColumnNames = visibleColumns.stream().map(IQueryColumn::getName).collect(Collectors.toList());
@@ -47,7 +47,7 @@ public class SubqueryExplainPlan extends JdbcExplainPlan {
                 formatter.line("OrderBy: " + orderColumns.stream().map(OrderColumn::toString).collect(Collectors.joining(", ")));
             }
             if (groupByColumns != null && !groupByColumns.isEmpty()) {
-                formatter.line("GroupBy: " + groupByColumns.stream().map(ConcreteColumn::toString).collect(Collectors.joining(", ")));
+                formatter.line("GroupBy: " + groupByColumns.stream().map(IQueryColumn::toString).collect(Collectors.joining(", ")));
             }
             formatter.withFirstLine("->", () -> {
                 formatter.line(String.format("TempView: %s", tempViewName));

@@ -11,7 +11,7 @@ public class ConcreteColumn implements IQueryColumn {
     private final boolean isVisible;
     private final boolean isUUID;
     private final Class<?> returnType;
-    private final int columnOrdinal;
+    private int columnOrdinal;
 
     public ConcreteColumn(String columnName, Class<?> returnType, String columnAlias, boolean isVisible, TableContainer tableContainer, int columnOrdinal) {
         this.columnName = columnName;
@@ -26,6 +26,11 @@ public class ConcreteColumn implements IQueryColumn {
     @Override
     public int getColumnOrdinal() {
         return columnOrdinal;
+    }
+
+    @Override
+    public void setColumnOrdinal(int ordinal) {
+        this.columnOrdinal = ordinal;
     }
 
     @Override

@@ -7,6 +7,7 @@ public class QueryExecutionConfig {
     private boolean explainPlanVerbose;
     private final TempTableNameGenerator tempTableNameGenerator = new TempTableNameGenerator();
     private boolean isJoinUsed = false;
+    private boolean calcite = true;
 
     public QueryExecutionConfig() {
     }
@@ -37,5 +38,12 @@ public class QueryExecutionConfig {
         isJoinUsed = joinUsed;
     }
 
+    public boolean isCalcite() {
+        return this.calcite;
+    }
 
+    public QueryExecutionConfig setCalcite(boolean calcite) {
+        this.calcite = calcite;
+        return this;
+    }
 }

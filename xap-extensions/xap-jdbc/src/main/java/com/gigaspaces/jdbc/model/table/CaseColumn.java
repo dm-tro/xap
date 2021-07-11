@@ -25,6 +25,11 @@ public class CaseColumn implements IQueryColumn{
     }
 
     @Override
+    public void setColumnOrdinal(int ordinal) {
+
+    }
+
+    @Override
     public String getName() {
         return columnName;
     }

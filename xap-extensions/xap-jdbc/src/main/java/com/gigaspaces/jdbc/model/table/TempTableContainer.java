@@ -55,7 +55,7 @@ public class TempTableContainer extends TableContainer {
             tableResult.filter(x -> queryTemplatePacket.eval(x));
         }
 
-        validate();
+        validate(config);
 
         TempQueryResult queryResult = new TempQueryResult(this);
         if(!getGroupByColumns().isEmpty()){
@@ -138,7 +138,7 @@ public class TempTableContainer extends TableContainer {
 
     @Override
     public QueryTemplatePacket createQueryTemplatePacketWithRange(Range range) {
-        addQueryColumn(range.getPath(), null, false, -1);
+        addQueryColumnWithoutOrdinal(range.getPath(), null, false);
         if (range instanceof EqualValueRange) {
             return new TempTableQTP((EqualValueRange) range);
         } else if (range instanceof SegmentRange || range instanceof NotEqualValueRange || range instanceof RegexRange) {
