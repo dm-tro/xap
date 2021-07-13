@@ -22,6 +22,8 @@ public class TempTableContainer extends TableContainer {
     protected final Set<IQueryColumn> invisibleColumns = new HashSet<>();
     protected final List<String> allColumnNamesSorted = new ArrayList<>();
     private TableContainer joinedTable;
+    private boolean isJoined;
+    private JoinInfo joinInfo;
 
     public TempTableContainer(String alias) {
         this.alias = alias;
@@ -117,7 +119,7 @@ public class TempTableContainer extends TableContainer {
 
     @Override
     public TableContainer getJoinedTable() {
-        throw new UnsupportedOperationException("Not supported yet!");
+        return joinedTable;
     }
 
     @Override
@@ -154,12 +156,12 @@ public class TempTableContainer extends TableContainer {
 
     @Override
     public void setJoined(boolean joined) {
-
+        this.isJoined = joined;
     }
 
     @Override
     public boolean isJoined() {
-        return false;
+        return this.isJoined;
     }
 
     @Override
@@ -179,15 +181,16 @@ public class TempTableContainer extends TableContainer {
 
     @Override
     public JoinInfo getJoinInfo() {
-        return null;
+        return joinInfo;
     }
 
     @Override
     public void setJoinInfo(JoinInfo joinInfo) {
+        this.joinInfo = joinInfo;
     }
 
     @Override
     public boolean checkJoinCondition() {
-        return false;
+        return joinInfo.checkJoinCondition();
     }
 }

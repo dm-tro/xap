@@ -136,25 +136,24 @@ public class OdbcMetadataQueryTest extends AbstractServerTest {
         checkQuery(SELECT_NULL);
     }
 
-    @Disabled("UnsupportedOperationException: Not supported yet! (TempTableContainer.getJoinedTable)")
     @Test
     public void testSelectTables() throws Exception {
         checkQuery(SELECT_TABLES);
     }
 
-    @Disabled("UnsupportedOperationException: Not supported yet! (TempTableContainer.getJoinedTable)")
+    @Disabled("ColumnNotFoundException: Could not find column with name [oid]")
     @Test
     public void testSelectAttributes1() throws Exception {
         checkQuery(SELECT_ATTRIBUTES_1);
     }
 
-    @Disabled("UnsupportedOperationException: Not supported yet! (TempTableContainer.getJoinedTable)")
+    @Disabled("UnsupportedOperationException: Only equal joins are supported")
     @Test
     public void testSelectAttributes2() throws Exception {
         checkQuery(SELECT_ATTRIBUTES_2);
     }
 
-    @Disabled("Could not find column with name [indexrelid] (column resolution issue in JOIN handler)")
+    @Disabled("ColumnNotFoundException: Could not find column with name [indexrelid]")
     @Test
     public void testSelectIndexes() throws Exception {
         checkQuery(SELECT_INDEXES);
