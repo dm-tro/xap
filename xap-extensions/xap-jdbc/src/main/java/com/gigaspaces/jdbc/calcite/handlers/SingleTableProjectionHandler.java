@@ -1,6 +1,7 @@
 package com.gigaspaces.jdbc.calcite.handlers;
 
 import com.gigaspaces.jdbc.QueryExecutor;
+import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.model.table.*;
 import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlFunction;
@@ -42,11 +43,12 @@ public class SingleTableProjectionHandler extends RexShuttle {
                 RexCall call = (RexCall) node;
                 SqlFunction sqlFunction;
                 List<IQueryColumn> queryColumns = new ArrayList<>();
+                IQueryColumn functionCallColumn = null;
                 switch (call.getKind()) {
                     case OTHER_FUNCTION:
                         sqlFunction = (SqlFunction) call.op;
                         addQueryColumns(call, queryColumns);
-                        IQueryColumn functionCallColumn = new FunctionCallColumn(queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, isRoot, -1);
+                        functionCallColumn = new FunctionCallColumn(queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, isRoot, -1);
                         if(isRoot)
                             tableContainer.getVisibleColumns().add(functionCallColumn);
                         else
@@ -55,11 +57,11 @@ public class SingleTableProjectionHandler extends RexShuttle {
                     case CAST:
                         sqlFunction = (SqlCastFunction) call.op;
                         addQueryColumns(call, queryColumns);
-                        IQueryColumn functionCallColumn2 = new CastFunctionCallColumn(queryColumns, sqlFunction.toString(), sqlFunction.getName(), null, isRoot, -1, call.getType().getFullTypeString());
+                        functionCallColumn = new FunctionCallColumn(queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, isRoot, -1, call.getType().getFullTypeString());
                         if(isRoot)
-                            tableContainer.getVisibleColumns().add(functionCallColumn2);
+                            tableContainer.getVisibleColumns().add(functionCallColumn);
                         else
-                            tableContainer.getInvisibleColumns().add(functionCallColumn2);
+                            tableContainer.getInvisibleColumns().add(functionCallColumn);
                         break;
                     case CASE:
                         CaseColumn caseColumn = new CaseColumn(outputFields.get(i), CalciteUtils.getJavaType(call), i);
@@ -87,10 +89,14 @@ public class SingleTableProjectionHandler extends RexShuttle {
                     String column = inputFields.get(rexInputRef.getIndex());
                     queryColumns.add(tableContainer.addQueryColumn(column, null, false, -1));
                 }
-                if (rexNode.isA(SqlKind.LITERAL)) {
+                else if (rexNode.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) rexNode;
                     queryColumns.add(new LiteralColumn(CalciteUtils.getValue(literal)));
                 }
+//                else if (rexNode.isA(SqlKind.CAST)) {
+//                    RexCall rexCall = (RexCall) rexNode;
+//                    addQueryColumns(rexCall, queryColumns);
+//                }
             }
         }
     }

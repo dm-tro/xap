@@ -17,6 +17,7 @@ public class FunctionCallColumn implements IQueryColumn{
     protected final boolean isVisible;
     protected final int columnOrdinal;
     private LocalSession session;
+    protected final String type;
 
     public FunctionCallColumn(List<IQueryColumn> params, String functionName, String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
         this.params = params;
@@ -25,6 +26,17 @@ public class FunctionCallColumn implements IQueryColumn{
         this.columnAlias = columnAlias;
         this.isVisible = isVisible;
         this.columnOrdinal = columnOrdinal;
+        this.type = null;
+    }
+
+    public FunctionCallColumn(List<IQueryColumn> params, String functionName, String columnName, String columnAlias, boolean isVisible, int columnOrdinal, String type) {
+        this.params = params;
+        this.columnName = columnName;
+        this.functionName = functionName;
+        this.columnAlias = columnAlias;
+        this.isVisible = isVisible;
+        this.columnOrdinal = columnOrdinal;
+        this.type = type;
     }
 
     public FunctionCallColumn(LocalSession session, List<IQueryColumn> params, String functionName, String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
@@ -104,6 +116,11 @@ public class FunctionCallColumn implements IQueryColumn{
                 @Override
                 public LocalSession getSession() {
                     return session;
+                }
+
+                @Override
+                public String getType() {
+                    return type;
                 }
             });
         }

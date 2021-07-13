@@ -1,7 +1,7 @@
 package com.gigaspaces.jdbc.calcite;
 
 import com.gigaspaces.jdbc.QueryExecutor;
-import com.gigaspaces.jdbc.calcite.handlers.CalciteUtils;
+import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.calcite.handlers.CaseConditionHandler;
 import com.gigaspaces.jdbc.calcite.handlers.ConditionHandler;
 import com.gigaspaces.jdbc.calcite.handlers.SingleTableProjectionHandler;
@@ -82,15 +82,12 @@ public class SelectHandler extends RelShuttleImpl {
             childToCalc.putIfAbsent(input, calc);
         }
         RelNode result = super.visit(other);
-        if(other instanceof GSJoin){
+        if (other instanceof GSJoin) {
             handleJoin((GSJoin) other);
-        }
-        if( other instanceof GSValues ){
+        } else if (other instanceof GSValues) {
             GSValues gsValues = (GSValues) other;
             handleValues(gsValues);
-        }
-
-        if(other instanceof GSSort){
+        } else if (other instanceof GSSort) {
             handleSort((GSSort) other);
         }
 
@@ -112,6 +109,10 @@ public class SelectHandler extends RelShuttleImpl {
                     FunctionCallColumn functionCallColumn = getFunctionCallColumn(program, (RexCall) node);
                     queryExecutor.addColumn(functionCallColumn);
                 }
+//                if (node instanceof RexLiteral){
+//                    LiteralColumn literalColumn = new LiteralColumn(CalciteUtils.getValue((RexLiteral) node));
+//                    queryExecutor.addColumn(literalColumn);
+//                }
             }
         }
     }
