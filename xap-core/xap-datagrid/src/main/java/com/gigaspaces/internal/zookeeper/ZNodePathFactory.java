@@ -27,16 +27,12 @@ public class ZNodePathFactory {
         return path(PUS, puName);
     }
 
-    public static String lockPuName(String puName) {
-        return path(LOCKS,PUS, puName);
+    public static String lockPuName(String name) {
+        return path(LOCKS,PUS, name);
     }
 
     public static String lockPersistentName(String puName) {
         return path(LOCKS,PUS, puName+"/persistent");
-    }
-
-    public static String lockPuSlaName(String puName) {
-        return path(LOCKS,PUS, puName+"/sla");
     }
 
     public static String processingUnit(String puName, String component) {
@@ -47,17 +43,13 @@ public class ZNodePathFactory {
         return path(PUS, puName, component, String.valueOf(partitionId), elements);
     }
 
-    public static String processingUnit(String puName, String component, String instanceId, String ... elements) {
-        return path(PUS, puName, component, instanceId, elements);
-    }
-
     public static String space(String spaceName) {
         return path(SPACES, spaceName);
     }
+
     public static String space(String spaceName, String component, int partitionId, String ... elements) {
         return path(SPACES, spaceName, component, String.valueOf(partitionId), elements);
     }
-
     public static String space(String spaceName, String component, String partitionId, String ... elements) {
         return path(SPACES, spaceName, component, partitionId, elements);
     }

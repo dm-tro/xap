@@ -2,7 +2,6 @@ package com.gigaspaces.internal.server.space;
 
 import com.gigaspaces.attribute_store.AttributeStore;
 import com.gigaspaces.internal.zookeeper.ZNodePathFactory;
-import com.gigaspaces.start.SystemInfo;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -23,7 +22,7 @@ public class ZookeeperLastPrimaryHandler {
     public ZookeeperLastPrimaryHandler(SpaceImpl spaceImpl, AttributeStore attributeStore, Logger logger) {
         this._logger = logger;
         this._attributeStoreKey = toPath(spaceImpl.getName(), String.valueOf(spaceImpl.getPartitionIdOneBased()));
-        this.attributeStoreValue = toId(spaceImpl.getInstanceId(), spaceImpl.getSpaceUuid().toString(), SystemInfo.singleton().network().getHost().getHostAddress());
+        this.attributeStoreValue = toId(spaceImpl.getInstanceId(), spaceImpl.getSpaceUuid().toString());
         this._attributeStore = attributeStore;
     }
 
@@ -61,7 +60,7 @@ public class ZookeeperLastPrimaryHandler {
         if (tokens.length == 2)
             return tokens[0];
 
-        _logger.warn("Invalid last primary value [" + lastPrimary + "] - expected " + toId("<instance_id>","<service_id>", "<ip>"));
+        _logger.warn("Invalid last primary value [" + lastPrimary + "] - expected " + toId("<instance_id>","<service_id>"));
         return null;
     }
 
@@ -77,7 +76,7 @@ public class ZookeeperLastPrimaryHandler {
         return ZNodePathFactory.space(spaceName, "leader-election", partitionId, "leader");
     }
 
-    public static String toId(String instanceId, String uid, String ip) {
-        return instanceId + SEPARATOR + uid + SEPARATOR + ip;
+    public static String toId(String instanceId, String uid) {
+        return instanceId + SEPARATOR + uid;
     }
 }
