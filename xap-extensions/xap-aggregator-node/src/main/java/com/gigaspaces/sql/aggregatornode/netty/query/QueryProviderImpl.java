@@ -10,6 +10,7 @@ import com.gigaspaces.sql.aggregatornode.netty.exception.NonBreakingException;
 import com.gigaspaces.sql.aggregatornode.netty.exception.ParseException;
 import com.gigaspaces.sql.aggregatornode.netty.exception.ProtocolException;
 import com.gigaspaces.sql.aggregatornode.netty.utils.*;
+import com.google.common.collect.ImmutableList;
 import com.j_spaces.jdbc.ResponsePacket;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -30,6 +31,7 @@ import static java.util.Collections.singletonList;
 public class QueryProviderImpl implements QueryProvider {
 
     private static final int DML_SINGLE_VALUE_MODIFIED = 1;
+    private static final String SELECT_NULL_NULL_NULL = "SELECT NULL, NULL, NULL";
 
     private final CalciteQueryHandler handler;
 
@@ -124,6 +126,17 @@ public class QueryProviderImpl implements QueryProvider {
 
     @Override
     public List<Portal<?>> executeQueryMultiline(Session session, String query) throws ProtocolException {
+        if (query.equalsIgnoreCase(SELECT_NULL_NULL_NULL)) {
+            List<ColumnDescription> columns = ImmutableList.of(
+                    new ColumnDescription("column1", TypeUtils.PG_TYPE_UNKNOWN),
+                    new ColumnDescription("column2", TypeUtils.PG_TYPE_UNKNOWN),
+                    new ColumnDescription("column3", TypeUtils.PG_TYPE_UNKNOWN)
+            );
+            StatementDescription statementDescription = new StatementDescription(ParametersDescription.EMPTY, new RowDescription(columns));
+            StatementImpl statement = new StatementImpl(this, Constants.EMPTY_STRING, null, null, statementDescription);
+            ThrowingSupplier op = () -> singletonList(new Object[]{null, null, null}).iterator();
+            return Collections.singletonList(new QueryPortal(this, Constants.EMPTY_STRING, statement, PortalCommand.SELECT, EMPTY_INT_ARRAY, op));
+        }
         try {
             // TODO possibly it's worth to add SqlEmptyNode to sql parser
             if (query.trim().isEmpty()) {
@@ -235,12 +248,12 @@ public class QueryProviderImpl implements QueryProvider {
             return prepareSetOption(session, name, statement, (SqlSetOption) query);
         }
 
-        if (query.isA(SqlKind.QUERY)) {
-            return prepareQuery(session, name, statement, params, formatCodes, query);
-        }
-
         if (SqlUtil.isCallTo(query, SqlShowOption.OPERATOR)) {
             return prepareShowOption(session, name, statement, (SqlShowOption) query);
+        }
+
+        if (query.isA(SqlKind.QUERY)) {
+            return prepareQuery(session, name, statement, params, formatCodes, query);
         }
 
         throw new NonBreakingException(ErrorCodes.UNSUPPORTED_FEATURE, "Unsupported query kind: " + query.getKind());
