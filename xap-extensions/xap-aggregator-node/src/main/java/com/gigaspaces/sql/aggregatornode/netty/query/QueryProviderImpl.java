@@ -18,6 +18,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.slf4j.Logger;
 
 import java.nio.charset.Charset;
 import java.sql.SQLException;
@@ -38,6 +39,7 @@ public class QueryProviderImpl implements QueryProvider {
 
     private final Map<String, Statement> statements = new HashMap<>();
     private final Map<String, Portal<?>> portals = new HashMap<>();
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(QueryProviderImpl.class);
 
     public QueryProviderImpl() {
         this.handler = new CalciteQueryHandler();
@@ -127,6 +129,7 @@ public class QueryProviderImpl implements QueryProvider {
 
     @Override
     public List<Portal<?>> executeQueryMultiline(Session session, String query) throws ProtocolException {
+        log.debug("Executing query: {}", query);
         if (query.equalsIgnoreCase(SELECT_NULL_NULL_NULL)) {
             List<ColumnDescription> columns = ImmutableList.of(
                     new ColumnDescription("column1", TypeUtils.PG_TYPE_UNKNOWN),
