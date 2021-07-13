@@ -8,10 +8,7 @@ import com.j_spaces.jdbc.builder.range.Range;
 import net.sf.jsqlparser.expression.Expression;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,6 +60,11 @@ public abstract class TableContainer {
     public abstract boolean isJoined();
 
     public abstract boolean hasColumn(String columnName);
+
+    public boolean hasVisibleColumn(String columnName) {
+        return getVisibleColumns().stream().map(IQueryColumn::getName).anyMatch(qcName -> Objects.equals(qcName,
+                columnName));
+    }
 
     public abstract JoinInfo getJoinInfo();
 

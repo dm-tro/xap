@@ -218,7 +218,7 @@ public class CaseConditionHandler extends RexShuttle {
             return tableContainer;
         }
         for (TableContainer table : queryExecutor.getTables()) {
-            if (table.hasColumn(column)) {
+            if (table.hasVisibleColumn(column)) {
                 return table;
             }
         }
