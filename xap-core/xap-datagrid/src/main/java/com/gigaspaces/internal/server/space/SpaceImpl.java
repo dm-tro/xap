@@ -1714,6 +1714,9 @@ public class SpaceImpl extends AbstractService implements IRemoteSpace, IInterna
     }
 
     private void waitForLeaderIfNeeded() throws IOException, InterruptedException {
+        if(!this._engine.isTieredStorage()){
+            return;
+        }
         String lastPrimary = attributeStore.get(ZookeeperLastPrimaryHandler.toPath(_spaceName, String.valueOf(getPartitionIdOneBased())));
         int i = 0;
         if (differentLastPrimaryExist(lastPrimary)) {
@@ -3149,8 +3152,8 @@ public class SpaceImpl extends AbstractService implements IRemoteSpace, IInterna
         spaceConfig.setEngineMaxThreads(configReader.getSpaceProperty(Engine.ENGINE_MAX_THREADS_PROP, Engine.ENGINE_MAX_THREADS_DEFAULT));
 
         //db properties
-        boolean isPersitent = configReader.getBooleanSpaceProperty(StorageAdapter.PERSISTENT_ENABLED_PROP, StorageAdapter.PERSISTENT_ENABLED_DEFAULT);
-        spaceConfig.setPersistent(isPersitent);
+        boolean isPersistent = configReader.getBooleanSpaceProperty(StorageAdapter.PERSISTENT_ENABLED_PROP, StorageAdapter.PERSISTENT_ENABLED_DEFAULT);
+        spaceConfig.setPersistent(isPersistent);
         spaceConfig.setMirrorServiceEnabled(configReader.getBooleanSpaceProperty(
                 Mirror.MIRROR_SERVICE_ENABLED_PROP, Mirror.MIRROR_SERVICE_ENABLED_DEFAULT));
         // External Data Source
@@ -3214,7 +3217,7 @@ public class SpaceImpl extends AbstractService implements IRemoteSpace, IInterna
 
         spaceConfig.setCacheManagerSize(configReader.getSpaceProperty(CacheManager.CACHE_MANAGER_SIZE_PROP, CacheManager.CACHE_MANAGER_SIZE_DEFAULT));
 
-        final String defaultCachePolicyValue = isPersitent ? String.valueOf(
+        final String defaultCachePolicyValue = isPersistent ? String.valueOf(
                 CacheManager.CACHE_POLICY_LRU) : String.valueOf(CacheManager.CACHE_POLICY_ALL_IN_CACHE);
 
         spaceConfig.setCachePolicy(configReader.getSpaceProperty(CACHE_POLICY_PROP, defaultCachePolicyValue));
