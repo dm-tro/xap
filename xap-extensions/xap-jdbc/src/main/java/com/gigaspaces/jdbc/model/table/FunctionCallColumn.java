@@ -1,6 +1,7 @@
 package com.gigaspaces.jdbc.model.table;
 
 import com.gigaspaces.internal.transport.IEntryPacket;
+import com.gigaspaces.query.sql.functions.extended.LocalSession;
 import com.gigaspaces.query.sql.functions.SqlFunction;
 import com.gigaspaces.query.sql.functions.SqlFunctionExecutionContext;
 import com.j_spaces.jdbc.SQLFunctions;
@@ -15,6 +16,7 @@ public class FunctionCallColumn implements IQueryColumn{
     protected final String columnAlias;
     protected final boolean isVisible;
     protected final int columnOrdinal;
+    private LocalSession session;
 
     public FunctionCallColumn(List<IQueryColumn> params, String functionName, String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
         this.params = params;
@@ -23,6 +25,11 @@ public class FunctionCallColumn implements IQueryColumn{
         this.columnAlias = columnAlias;
         this.isVisible = isVisible;
         this.columnOrdinal = columnOrdinal;
+    }
+
+    public FunctionCallColumn(LocalSession session, List<IQueryColumn> params, String functionName, String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
+        this(params, functionName, columnName, columnAlias, isVisible, columnOrdinal);
+        this.session = session;
     }
 
     @Override
@@ -92,6 +99,11 @@ public class FunctionCallColumn implements IQueryColumn{
                 @Override
                 public Object getArgument(int index) {
                     return params.get(index).getValue(entryPacket);
+                }
+
+                @Override
+                public LocalSession getSession() {
+                    return session;
                 }
             });
         }

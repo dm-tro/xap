@@ -8,6 +8,7 @@ import com.gigaspaces.jdbc.calcite.handlers.SingleTableProjectionHandler;
 import com.gigaspaces.jdbc.calcite.pg.PgCalciteTable;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.table.*;
+import com.gigaspaces.query.sql.functions.extended.LocalSession;
 import com.j_spaces.jdbc.builder.QueryTemplatePacket;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelFieldCollation;
@@ -27,10 +28,12 @@ import java.util.Map;
 public class SelectHandler extends RelShuttleImpl {
     private final QueryExecutor queryExecutor;
     private final Map<RelNode, GSCalc> childToCalc = new HashMap<>();
+    private final LocalSession session;
     private RelNode root = null;
 
-    public SelectHandler(QueryExecutor queryExecutor) {
+    public SelectHandler(QueryExecutor queryExecutor, LocalSession session) {
         this.queryExecutor = queryExecutor;
+        this.session = session;
     }
 
     @Override
@@ -129,7 +132,7 @@ public class SelectHandler extends RelShuttleImpl {
             }
 
         }
-        return new FunctionCallColumn(params, sqlFunction.getName(), null, null, true, -1);
+        return new FunctionCallColumn(session, params, sqlFunction.getName(), null, null, true, -1);
     }
 
     private void handleSort(GSSort sort) {

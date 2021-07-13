@@ -37,7 +37,7 @@ public class LnSqlFunction extends SqlFunction {
 
         Object logNumber = context.getArgument(0);
         if (!(logNumber instanceof Number)) {
-            throw new RuntimeException("Mod function - wrong arguments types, arguments should be Number. First argument:[" + logNumber + "]");
+            throw new RuntimeException("Ln function - wrong arguments types, arguments should be Number. First argument:[" + logNumber + "]");
         }
         return Math.log(((Number) logNumber).doubleValue());
     }

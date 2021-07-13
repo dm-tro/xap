@@ -6,6 +6,7 @@ import com.gigaspaces.jdbc.calcite.GSOptimizerValidationResult;
 import com.gigaspaces.jdbc.calcite.GSRelNode;
 import com.gigaspaces.jdbc.calcite.handlers.CalciteQueryHandler;
 import com.gigaspaces.jdbc.calcite.sql.extension.SqlShowOption;
+import com.gigaspaces.query.sql.functions.extended.LocalSession;
 import com.gigaspaces.sql.aggregatornode.netty.exception.NonBreakingException;
 import com.gigaspaces.sql.aggregatornode.netty.exception.ParseException;
 import com.gigaspaces.sql.aggregatornode.netty.exception.ProtocolException;
@@ -333,7 +334,8 @@ public class QueryProviderImpl implements QueryProvider {
             ThrowingSupplier<Iterator<Object[]>, ProtocolException> op = () -> {
                 try {
                     GSRelNode physicalPlan = statement.getOptimizer().optimize(query);
-                    ResponsePacket packet = handler.executeStatement(session.getSpace(), physicalPlan, params);
+                    LocalSession localSession = new LocalSession(session.getUsername());
+                    ResponsePacket packet = handler.executeStatement(session.getSpace(), physicalPlan, params, localSession);
                     return new ArrayIterator<>(packet.getResultEntry().getFieldValues());
                 } catch (SQLException e) {
                     throw new NonBreakingException(ErrorCodes.INTERNAL_ERROR, "Failed to execute operation.", e);

@@ -38,7 +38,7 @@ public class LogSqlFunction extends SqlFunction {
         if (context.getNumberOfArguments() == 1) {
             Object logNumber = context.getArgument(0);
             if (!(logNumber instanceof Number)) {
-                throw new RuntimeException("Mod function - wrong arguments types, arguments should be Number. First argument:[" + logNumber + "]");
+                throw new RuntimeException("Log function - wrong arguments types, arguments should be Number. First argument:[" + logNumber + "]");
             }
             return Math.log10(((Number) logNumber).doubleValue());
         } else {
@@ -46,7 +46,7 @@ public class LogSqlFunction extends SqlFunction {
             Object base = context.getArgument(0);
             Object logNumber = context.getArgument(1);
             if (!(base instanceof Number) || !(logNumber instanceof Number)) {
-                throw new RuntimeException("Mod function - wrong arguments types, both arguments should be Number. First argument:[" + base + "]. Second argument:[ " + logNumber + "]");
+                throw new RuntimeException("Log function - wrong arguments types, both arguments should be Number. First argument:[" + base + "]. Second argument:[ " + logNumber + "]");
             }
             return Math.log(((Number) logNumber).doubleValue()) / Math.log(((Number) base).doubleValue());
         }
