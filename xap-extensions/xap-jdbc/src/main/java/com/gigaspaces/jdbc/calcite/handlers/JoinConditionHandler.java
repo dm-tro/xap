@@ -63,15 +63,13 @@ public class JoinConditionHandler {
         }
         int firstOperandIndex = ((RexInputRef) rexCall.getOperands().get(0)).getIndex();
         int secondOperandIndex = ((RexInputRef) rexCall.getOperands().get(1)).getIndex();
-        int diff;
         int leftIndex;
         int rightIndex;
+        int diff = join.getLeft().getRowType().getFieldCount();
         if (firstOperandIndex < secondOperandIndex) {
-            diff = join.getLeft().getRowType().getFieldCount();
             leftIndex = firstOperandIndex;
             rightIndex = secondOperandIndex;
         } else {
-            diff = join.getRight().getRowType().getFieldCount();
             leftIndex = secondOperandIndex;
             rightIndex = firstOperandIndex;
         }

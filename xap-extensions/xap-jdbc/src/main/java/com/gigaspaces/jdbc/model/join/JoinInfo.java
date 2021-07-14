@@ -33,13 +33,13 @@ public class JoinInfo {
     public boolean checkJoinCondition() {
         if (joinType.equals(JoinType.INNER) || joinType.equals(JoinType.SEMI)) {
             hasMatch = calculateConditions();
-//        } else if(range != null){
-//            if(range.getPath().equals(rightColumn.getName())) {
-//                hasMatch = range.getPredicate().execute(rightValue);
-//            }
-//            else {
-//                hasMatch = range.getPredicate().execute(leftValue);
-//            }
+        } else if(range != null){
+            if(range.getPath().equals(rightColumn.getName())) {
+                hasMatch = range.getPredicate().execute(rightColumn.getCurrentValue());
+            }
+            else {
+                hasMatch = range.getPredicate().execute(leftColumn.getCurrentValue());
+            }
         } else {
             hasMatch = true;
         }
