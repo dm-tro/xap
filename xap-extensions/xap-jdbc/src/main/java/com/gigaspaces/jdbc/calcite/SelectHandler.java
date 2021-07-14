@@ -1,11 +1,13 @@
 package com.gigaspaces.jdbc.calcite;
 
 import com.gigaspaces.jdbc.QueryExecutor;
-import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.calcite.handlers.CaseConditionHandler;
 import com.gigaspaces.jdbc.calcite.handlers.ConditionHandler;
 import com.gigaspaces.jdbc.calcite.handlers.SingleTableProjectionHandler;
 import com.gigaspaces.jdbc.calcite.pg.PgCalciteTable;
+import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
+import com.gigaspaces.jdbc.model.join.JoinConditionColumnValue;
+import com.gigaspaces.jdbc.model.join.JoinConditionOperator;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.table.*;
 import com.gigaspaces.query.sql.functions.extended.LocalSession;
@@ -182,25 +184,23 @@ public class SelectHandler extends RelShuttleImpl {
 
     private void handleJoin(GSJoin join) {
         RexCall rexCall = (RexCall) join.getCondition();
-        if(rexCall.getKind() != SqlKind.EQUALS){
-            throw new UnsupportedOperationException("Only equal joins are supported");
-        }
-        int left = join.getLeft().getRowType().getFieldCount();
-        int leftIndex = ((RexInputRef) rexCall.getOperands().get(0)).getIndex();
-        int rightIndex = ((RexInputRef) rexCall.getOperands().get(1)).getIndex();
-        String lColumn = join.getLeft().getRowType().getFieldNames().get(leftIndex);
-        String rColumn = join.getRight().getRowType().getFieldNames().get(rightIndex - left);
-        TableContainer rightContainer = queryExecutor.getTableByColumnIndex(rightIndex);
-        TableContainer leftContainer = queryExecutor.getTableByColumnIndex(leftIndex);
-        //TODO: @sagiv needed?- its already in the tables.
-        IQueryColumn rightColumn = rightContainer.addQueryColumn(rColumn, null, false, -1);
-        IQueryColumn leftColumn = leftContainer.addQueryColumn(lColumn, null, false, -1);
-        rightContainer.setJoinInfo(new JoinInfo(leftColumn, rightColumn, JoinInfo.JoinType.getType(join.getJoinType())));
-        if (leftContainer.getJoinedTable() == null) {
-            if (!rightContainer.isJoined()) {
-                leftContainer.setJoinedTable(rightContainer);
-                rightContainer.setJoined(true);
-            }
+        TableContainer leftContainer;
+        switch (rexCall.getKind()) {
+            case EQUALS:
+            case NOT_EQUALS:
+            case GREATER_THAN:
+            case GREATER_THAN_OR_EQUAL:
+            case LESS_THAN:
+            case LESS_THAN_OR_EQUAL:
+                leftContainer = handleSingleJoinCondition(join, rexCall);
+                break;
+            case OR:
+            case AND:
+                leftContainer = handleTwoJoinCondition(join, rexCall);
+                break;
+            default:
+                throw new UnsupportedOperationException("Join condition type [" + rexCall.getKind() + "] is not supported");
+
         }
         if(!childToCalc.containsKey(join)) { // it is SELECT *
             if(join.equals(root)
@@ -213,11 +213,87 @@ public class SelectHandler extends RelShuttleImpl {
                     }
                 }
             }
-        }
-        else{
+        } else {
             handleCalcFromJoin(childToCalc.get(join));
             childToCalc.remove(join); // visited, not needed anymore
         }
+    }
+
+    private TableContainer handleSingleJoinCondition(GSJoin join, RexCall rexCall) {
+        switch (rexCall.getKind()) {
+            case EQUALS:
+            case NOT_EQUALS:
+            case GREATER_THAN:
+            case GREATER_THAN_OR_EQUAL:
+            case LESS_THAN:
+            case LESS_THAN_OR_EQUAL:
+                break;
+            case OR:
+            case AND:
+                return handleTwoJoinCondition(join, rexCall);
+            default:
+                throw new UnsupportedOperationException("Join condition type [" + rexCall.getKind() + "] is not supported");
+        }
+        int firstOperandIndex = ((RexInputRef) rexCall.getOperands().get(0)).getIndex();
+        int secondOperandIndex = ((RexInputRef) rexCall.getOperands().get(1)).getIndex();
+        int diff;
+        int leftIndex;
+        int rightIndex;
+        if (firstOperandIndex < secondOperandIndex) {
+            diff = join.getLeft().getRowType().getFieldCount();
+            leftIndex = firstOperandIndex;
+            rightIndex = secondOperandIndex;
+        } else {
+            diff = join.getRight().getRowType().getFieldCount();
+            leftIndex = secondOperandIndex;
+            rightIndex = firstOperandIndex;
+        }
+        String lColumn = join.getLeft().getRowType().getFieldNames().get(leftIndex);
+        String rColumn = join.getRight().getRowType().getFieldNames().get(rightIndex - diff);
+        TableContainer rightContainer = queryExecutor.getTableByColumnIndex(rightIndex);
+        TableContainer leftContainer = queryExecutor.getTableByColumnIndex(leftIndex);
+        //TODO: @sagiv needed?- its already in the tables.
+        IQueryColumn rightColumn = rightContainer.addQueryColumn(rColumn, null, false, -1);
+        IQueryColumn leftColumn = leftContainer.addQueryColumn(lColumn, null, false, -1);
+        JoinInfo joinInfo = rightContainer.getJoinInfo();
+        if(joinInfo == null) {
+            joinInfo = new JoinInfo(JoinInfo.JoinType.getType(join.getJoinType()));
+            rightContainer.setJoinInfo(joinInfo);
+        }
+        joinInfo.addJoinCondition(JoinConditionOperator.getCondition(rexCall.getKind()), -1);
+        joinInfo.addJoinCondition(new JoinConditionColumnValue(leftColumn), -1);
+        joinInfo.addJoinCondition(new JoinConditionColumnValue(rightColumn), -1);
+
+        if (leftContainer.getJoinedTable() == null) {
+            if (!rightContainer.isJoined()) {
+                leftContainer.setJoinedTable(rightContainer);
+                rightContainer.setJoined(true);
+            }
+        }
+        return leftContainer;
+    }
+
+    private TableContainer handleTwoJoinCondition(GSJoin join, RexCall rexCall) {
+        TableContainer leftContainer;
+        switch (rexCall.getKind()) {
+            case EQUALS:
+            case NOT_EQUALS:
+            case GREATER_THAN:
+            case GREATER_THAN_OR_EQUAL:
+            case LESS_THAN:
+            case LESS_THAN_OR_EQUAL:
+                leftContainer = handleSingleJoinCondition(join, rexCall);
+                break;
+            case OR:
+            case AND:
+                leftContainer = handleSingleJoinCondition(join, (RexCall) rexCall.getOperands().get(0));
+                leftContainer = handleSingleJoinCondition(join, (RexCall) rexCall.getOperands().get(1));
+                leftContainer.getJoinedTable().getJoinInfo().addJoinCondition(JoinConditionOperator.getCondition(rexCall.getKind()), 0);
+                break;
+            default:
+                throw new UnsupportedOperationException("Join condition type [" + rexCall.getKind() + "] is not supported");
+        }
+        return leftContainer;
     }
 
     private void handleCalc(GSCalc other, TableContainer tableContainer) {

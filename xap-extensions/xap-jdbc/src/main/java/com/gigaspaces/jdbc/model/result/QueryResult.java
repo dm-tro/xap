@@ -118,11 +118,12 @@ public abstract class QueryResult {
     }
 
     public Cursor.Type getCursorType() {
-        if (getTableContainer() != null && getTableContainer().getJoinInfo() != null) {
-            return Cursor.Type.HASH;
-        } else {
-            return Cursor.Type.SCAN;
-        }
+//        if (getTableContainer() != null && getTableContainer().getJoinInfo() != null) {
+//            return Cursor.Type.HASH;
+//        } else {
+//            return Cursor.Type.SCAN;
+//        }
+        return Cursor.Type.SCAN;
     }
 
     public ResultEntry convertEntriesToResultArrays() {
