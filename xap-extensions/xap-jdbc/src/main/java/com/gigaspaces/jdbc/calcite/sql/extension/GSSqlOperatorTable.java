@@ -258,33 +258,4 @@ public class GSSqlOperatorTable extends ReflectiveSqlOperatorTable {
                     null,
                     OperandTypes.family(SqlTypeFamily.ANY, SqlTypeFamily.ANY),
                     SqlFunctionCategory.NUMERIC);
-
-
-
-    public static final SqlFunction ODBC_CURRENT_USER =
-            new SqlFunction(
-                    "ODBC_CURRENT_USER",
-                    SqlKind.OTHER_FUNCTION,
-                    ReturnTypes.VARCHAR_4,
-                    null,
-                    OperandTypes.NILADIC,
-                    SqlFunctionCategory.SYSTEM);
-
-    public static final SqlFunction ODBC_SESSION_USER =
-            new SqlFunction(
-                    "ODBC_SESSION_USER",
-                    SqlKind.OTHER_FUNCTION,
-                    ReturnTypes.VARCHAR_4,
-                    null,
-                    OperandTypes.NILADIC,
-                    SqlFunctionCategory.SYSTEM);
-
-    public static final SqlFunction ODBC_USER =
-            new SqlFunction(
-                    "ODBC_USER",
-                    SqlKind.OTHER_FUNCTION,
-                    ReturnTypes.VARCHAR_4,
-                    null,
-                    OperandTypes.NILADIC,
-                    SqlFunctionCategory.SYSTEM);
 }

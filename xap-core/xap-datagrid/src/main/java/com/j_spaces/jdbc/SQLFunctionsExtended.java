@@ -43,13 +43,12 @@ public class SQLFunctionsExtended {
         functions.put("LN", new LnSqlFunction());
         functions.put("POWER", new PowerSqlFunction());
         functions.put("RANDOM", new RandomSqlFunction());
-        functions.put("RAND", new RandomSqlFunction());
         functions.put("STRPOS", new StrposFunction());
         functions.put("SUBSTR", new SubstrSqlFunction());
         functions.put("SUBSTRING", new SubstringSqlFunction());
-        functions.put("ODBC_CURRENT_USER", new CurrentUserSqlFunction());
-        functions.put("ODBC_SESSION_USER", new CurrentUserSqlFunction());
-        functions.put("ODBC_USER", new CurrentUserSqlFunction());
+
+        functions.put("ARRAY_LOWER", new UnsupportedSqlFunction("ARRAY_LOWER"));
+        functions.put("ARRAY_UPPER", new UnsupportedSqlFunction("ARRAY_UPPER"));
         functions.put("GENERATE_SERIES", new UnsupportedSqlFunction("GENERATE_SERIES"));
         functions.put("PG_GET_EXPR", new PgGetExprSqlFunction());
     }

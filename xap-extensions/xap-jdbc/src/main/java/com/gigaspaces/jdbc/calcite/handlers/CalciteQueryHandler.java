@@ -5,7 +5,6 @@ import com.gigaspaces.jdbc.calcite.*;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
 import com.gigaspaces.jdbc.model.result.ExplainPlanQueryResult;
 import com.gigaspaces.jdbc.model.result.QueryResult;
-import com.gigaspaces.query.sql.functions.extended.LocalSession;
 import com.j_spaces.core.IJSpace;
 import com.j_spaces.jdbc.ResponsePacket;
 import org.apache.calcite.rel.externalize.RelWriterImpl;
@@ -29,10 +28,10 @@ public class CalciteQueryHandler {
     public ResponsePacket handle(String query, IJSpace space, Object[] preparedValues) throws SQLException {
         Properties customProperties = space.getURL().getCustomProperties();
         GSRelNode calcitePlan = optimizeWithCalcite(query, space, customProperties);
-        return executeStatement(space, calcitePlan, preparedValues, null);
+        return executeStatement(space, calcitePlan, preparedValues);
     }
 
-    public ResponsePacket executeStatement(IJSpace space, GSRelNode relNode, Object[] preparedValues, LocalSession session) throws SQLException {
+    public ResponsePacket executeStatement(IJSpace space, GSRelNode relNode, Object[] preparedValues) throws SQLException {
         ResponsePacket packet = new ResponsePacket();
         QueryExecutionConfig queryExecutionConfig;
         if (explainPlan) {
@@ -41,7 +40,7 @@ public class CalciteQueryHandler {
             queryExecutionConfig = new QueryExecutionConfig();
         }
         QueryExecutor qE = new QueryExecutor(space, queryExecutionConfig, preparedValues);
-        SelectHandler selectHandler = new SelectHandler(qE, session);
+        SelectHandler selectHandler = new SelectHandler(qE);
         relNode.accept(selectHandler);
         QueryResult queryResult = qE.execute();
         if (explainPlan) {

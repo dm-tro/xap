@@ -38,7 +38,7 @@ public class Log10SqlFunction extends SqlFunction {
 
         Object logNumber = context.getArgument(0);
         if (!(logNumber instanceof Number)) {
-            throw new RuntimeException("Log10 function - wrong arguments types, arguments should be Number. First argument:[" + logNumber + "]");
+            throw new RuntimeException("Mod function - wrong arguments types, arguments should be Number. First argument:[" + logNumber + "]");
         }
         return Math.log10(((Number) logNumber).doubleValue());
     }
