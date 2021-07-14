@@ -33,12 +33,20 @@ public class JoinInfo {
     public boolean checkJoinCondition() {
         if (joinType.equals(JoinType.INNER) || joinType.equals(JoinType.SEMI)) {
             hasMatch = calculateConditions();
-        } else if(range != null){
-            if(range.getPath().equals(rightColumn.getName())) {
-                hasMatch = range.getPredicate().execute(rightColumn.getCurrentValue());
+        } else if (range != null) {
+            boolean found = false;
+            for (JoinCondition joinCondition : joinConditions) {
+                if (joinCondition instanceof JoinConditionColumnValue) {
+                    IQueryColumn column = ((JoinConditionColumnValue) joinCondition).getColumn();
+                    if (range.getPath().equals(column.getName())) {
+                        hasMatch = range.getPredicate().execute(column.getCurrentValue());
+                        found = true;
+                        break;
+                    }
+                }
             }
-            else {
-                hasMatch = range.getPredicate().execute(leftColumn.getCurrentValue());
+            if (!found) {
+                hasMatch = false;
             }
         } else {
             hasMatch = true;
@@ -59,6 +67,7 @@ public class JoinInfo {
                     case LE:
                     case GT:
                     case GE:
+                    case LIKE:
                     case AND:
                     case OR:
                         JoinCondition first = stack.pop();
@@ -99,10 +108,8 @@ public class JoinInfo {
 
     public boolean insertRangeToJoinInfo(Range range) {
         if (joinType.equals(JoinType.RIGHT) || joinType.equals(JoinType.LEFT)) {
-            if (leftColumn.getName().equals(range.getPath()) || rightColumn.getName().equals(range.getPath())) {
-                this.range = range;
-                return true;
-            }
+            this.range = range;
+            return true;
         }
         return false;
     }

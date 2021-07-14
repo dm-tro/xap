@@ -6,7 +6,7 @@ import org.apache.calcite.sql.SqlKind;
 import java.util.Objects;
 
 public enum JoinConditionOperator implements JoinCondition {
-    EQ, NE, GT, GE, LT, LE, OR, AND;
+    EQ, NE, GT, GE, LT, LE, LIKE, OR, AND;
 
     public static JoinCondition getCondition(SqlKind sqlKind) {
         switch (sqlKind) {
@@ -22,6 +22,8 @@ public enum JoinConditionOperator implements JoinCondition {
                 return LT;
             case LESS_THAN_OR_EQUAL:
                 return LE;
+            case LIKE:
+                return LIKE;
             case OR:
                 return OR;
             case AND:
@@ -46,28 +48,33 @@ public enum JoinConditionOperator implements JoinCondition {
         if (leftValue == null || rightValue == null) {
             return false;
         }
-        Comparable first = TableRowUtils.castToComparable(rightValue);
-        Comparable second = TableRowUtils.castToComparable(leftValue);
-        int compareResult = first.compareTo(second);
         switch (this) {
             case EQ:
                 return Objects.equals(leftValue, rightValue);
             case NE:
                 return !Objects.equals(leftValue, rightValue);
             case GE:
-                return compareResult >= 0;
+                return getCompareResult(leftValue, rightValue) >= 0;
             case GT:
-                return compareResult > 0;
+                return getCompareResult(leftValue, rightValue) > 0;
             case LE:
-                return compareResult <= 0;
+                return getCompareResult(leftValue, rightValue) <= 0;
             case LT:
-                return compareResult < 0;
+                return getCompareResult(leftValue, rightValue) < 0;
             case AND:
-                return (boolean) first && (boolean) second;
+                return (boolean) leftValue && (boolean) rightValue;
             case OR:
-                return (boolean) first || (boolean) second;
+                return (boolean) leftValue || (boolean) rightValue;
+            case LIKE:
+                return ((String) leftValue).matches((String) rightValue);
             default:
                 throw new UnsupportedOperationException("Join with operator " + this + " is not supported");
         }
+    }
+
+    private int getCompareResult(Object leftValue, Object rightValue) {
+        Comparable first = TableRowUtils.castToComparable(leftValue);
+        Comparable second = TableRowUtils.castToComparable(rightValue);
+        return first.compareTo(second);
     }
 }

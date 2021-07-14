@@ -18,4 +18,8 @@ public class JoinConditionColumnValue implements JoinCondition {
     public boolean isOperator() {
         return false;
     }
+
+    public IQueryColumn getColumn() {
+        return this.column;
+    }
 }
