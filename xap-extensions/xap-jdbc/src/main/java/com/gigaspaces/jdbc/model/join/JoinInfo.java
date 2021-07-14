@@ -77,12 +77,8 @@ public class JoinInfo {
         return (boolean) stack.pop().getValue();
     }
 
-    public void addJoinCondition(JoinCondition joinCondition, int index) {
-        if(index < 0) {
-            this.joinConditions.add(joinCondition);
-        } else {
-            this.joinConditions.add(index, joinCondition);
-        }
+    public void addJoinCondition(JoinCondition joinCondition) {
+        this.joinConditions.add(joinCondition);
     }
 
     public boolean isHasMatch() {
