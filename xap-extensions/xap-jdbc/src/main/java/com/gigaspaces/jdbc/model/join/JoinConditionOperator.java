@@ -66,7 +66,10 @@ public enum JoinConditionOperator implements JoinCondition {
             case OR:
                 return (boolean) leftValue || (boolean) rightValue;
             case LIKE:
-                return ((String) leftValue).matches((String) rightValue);
+                // TODO: @sagiv try to use range?
+                //                String regex = ((String) value).replaceAll("%", ".*").replaceAll("_", ".");
+                //                range = isNot ? new NotRegexRange(column, regex) : new RegexRange(column, regex);
+                return ((String) leftValue).matches(((String) rightValue).replaceAll("%", ".*").replaceAll("_", "."));
             default:
                 throw new UnsupportedOperationException("Join with operator " + this + " is not supported");
         }
