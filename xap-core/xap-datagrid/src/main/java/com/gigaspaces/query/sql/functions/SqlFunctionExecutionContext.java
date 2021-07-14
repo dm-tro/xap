@@ -16,6 +16,8 @@
 
 package com.gigaspaces.query.sql.functions;
 
+import com.gigaspaces.query.sql.functions.extended.LocalSession;
+
 /**
  * Defines the arguments to be passed to an SqlFunction, generated for sqlFunction invocations.
  *
@@ -36,6 +38,10 @@ public interface SqlFunctionExecutionContext {
      * @return the value of argument at 'index'
      */
     Object getArgument(int index);
+
+    default LocalSession getSession() {
+        return null;
+    };
 
     default String getType(){return null;}
 

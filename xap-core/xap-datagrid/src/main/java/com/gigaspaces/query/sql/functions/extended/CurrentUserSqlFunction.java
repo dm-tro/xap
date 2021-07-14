@@ -20,26 +20,24 @@ import com.gigaspaces.query.sql.functions.SqlFunction;
 import com.gigaspaces.query.sql.functions.SqlFunctionExecutionContext;
 
 /**
- * Built in mathematical sql function to perform log10 operation.
+ * Get username for this session
  *
  * @author Mishel Liberman
  * @since 16.0
  */
 @com.gigaspaces.api.InternalApi
-public class Log10SqlFunction extends SqlFunction {
-
+public class CurrentUserSqlFunction extends SqlFunction {
     /**
-     * @param context contains single argument of Number.
-     * @return the result of log10 of context.getArgument(0).
+     * @param context contains 0 arguments.
+     * @return username for this session as String
      */
     @Override
     public Object apply(SqlFunctionExecutionContext context) {
-        assertNumberOfArguments(1, context);
-
-        Object logNumber = context.getArgument(0);
-        if (!(logNumber instanceof Number)) {
-            throw new RuntimeException("Log10 function - wrong arguments types, arguments should be Number. First argument:[" + logNumber + "]");
+        assertNumberOfArguments(0, context);
+        LocalSession session = context.getSession();
+        if (session == null) {
+            throw new RuntimeException("Current user function is supported through the data gateway only");
         }
-        return Math.log10(((Number) logNumber).doubleValue());
+        return session.getUsername();
     }
 }

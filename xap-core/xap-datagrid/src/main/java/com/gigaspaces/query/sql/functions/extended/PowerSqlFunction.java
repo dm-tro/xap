@@ -39,7 +39,7 @@ public class PowerSqlFunction extends SqlFunction {
         Object num = context.getArgument(0);
         Object power = context.getArgument(1);
         if (!(num instanceof Number) || !(power instanceof Number)) {
-            throw new RuntimeException("Mod function - wrong arguments types, both arguments should be Number. First argument:[" + num + "]. Second argument:" + power + "].");
+            throw new RuntimeException("Power function - wrong arguments types, both arguments should be Number. First argument:[" + num + "]. Second argument:" + power + "].");
         }
         return Math.pow(((Number) num).doubleValue(), ((Number) power).doubleValue());
     }
