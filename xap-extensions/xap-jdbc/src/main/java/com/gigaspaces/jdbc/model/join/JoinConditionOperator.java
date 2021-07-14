@@ -3,13 +3,18 @@ package com.gigaspaces.jdbc.model.join;
 import com.gigaspaces.jdbc.model.result.TableRowUtils;
 import org.apache.calcite.sql.SqlKind;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public enum JoinConditionOperator implements JoinCondition {
-    EQ, NE, GT, GE, LT, LE, LIKE, OR, AND;
+    NOT, EQ, NE, GT, GE, LT, LE, LIKE, OR, AND;
 
-    public static JoinCondition getCondition(SqlKind sqlKind) {
+    int numberOfOperands;
+
+    public static JoinConditionOperator getCondition(SqlKind sqlKind) {
         switch (sqlKind) {
+            case NOT:
+                return NOT;
             case EQUALS:
                 return EQ;
             case NOT_EQUALS:
@@ -33,6 +38,15 @@ public enum JoinConditionOperator implements JoinCondition {
         }
     }
 
+    public int getNumberOfOperands() {
+        return numberOfOperands;
+    }
+
+    public JoinConditionOperator setNumberOfOperands(int numberOfOperands) {
+        this.numberOfOperands = numberOfOperands;
+        return this;
+    }
+
     @Override
     public Object getValue() {
         return null;
@@ -43,33 +57,42 @@ public enum JoinConditionOperator implements JoinCondition {
         return true;
     }
 
-
-    public boolean evaluate(Object leftValue, Object rightValue) {
-        if (leftValue == null || rightValue == null) {
+    public boolean evaluate(Object... values) {
+        if (Arrays.stream(values).anyMatch(Objects::isNull)) {
             return false;
         }
         switch (this) {
+            case NOT:
+                return !(boolean) values[0];
             case EQ:
-                return Objects.equals(leftValue, rightValue);
+                return Objects.equals(values[0], values[1]);
             case NE:
-                return !Objects.equals(leftValue, rightValue);
+                return !Objects.equals(values[0], values[1]);
             case GE:
-                return getCompareResult(leftValue, rightValue) >= 0;
+                return getCompareResult(values[0], values[1]) >= 0;
             case GT:
-                return getCompareResult(leftValue, rightValue) > 0;
+                return getCompareResult(values[0], values[1]) > 0;
             case LE:
-                return getCompareResult(leftValue, rightValue) <= 0;
+                return getCompareResult(values[0], values[1]) <= 0;
             case LT:
-                return getCompareResult(leftValue, rightValue) < 0;
+                return getCompareResult(values[0], values[1]) < 0;
             case AND:
-                return (boolean) leftValue && (boolean) rightValue;
+                boolean ans = true;
+                for (Object value : values) {
+                    ans &= (boolean) value;
+                }
+                return ans;
             case OR:
-                return (boolean) leftValue || (boolean) rightValue;
+                ans = false;
+                for (Object value : values) {
+                    ans |= (boolean) value;
+                }
+                return ans;
             case LIKE:
                 // TODO: @sagiv try to use range?
                 //                String regex = ((String) value).replaceAll("%", ".*").replaceAll("_", ".");
                 //                range = isNot ? new NotRegexRange(column, regex) : new RegexRange(column, regex);
-                return ((String) leftValue).matches(((String) rightValue).replaceAll("%", ".*").replaceAll("_", "."));
+                return ((String) values[0]).matches(((String) values[1]).replaceAll("%", ".*").replaceAll("_", "."));
             default:
                 throw new UnsupportedOperationException("Join with operator " + this + " is not supported");
         }

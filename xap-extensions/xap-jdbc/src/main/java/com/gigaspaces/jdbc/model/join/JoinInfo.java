@@ -60,7 +60,12 @@ public class JoinInfo {
             JoinCondition joinCondition = joinConditions.get(i);
             if (joinCondition.isOperator()) {
                 JoinConditionOperator joinConditionOperator = (JoinConditionOperator) joinCondition;
+                boolean evaluate;
                 switch (joinConditionOperator) {
+                    case NOT:
+                        evaluate = joinConditionOperator.evaluate(stack.pop().getValue());
+                        stack.push(new JoinConditionBooleanValue(evaluate));
+                        break;
                     case EQ:
                     case NE:
                     case LT:
@@ -68,11 +73,17 @@ public class JoinInfo {
                     case GT:
                     case GE:
                     case LIKE:
+                        evaluate = joinConditionOperator.evaluate(stack.pop().getValue(), stack.pop().getValue());
+                        stack.push(new JoinConditionBooleanValue(evaluate));
+                        break;
                     case AND:
                     case OR:
-                        JoinCondition first = stack.pop();
-                        JoinCondition second = stack.pop();
-                        boolean evaluate = joinConditionOperator.evaluate(first.getValue(), second.getValue());
+                        int numberOfOperands = joinConditionOperator.getNumberOfOperands();
+                        Object[] values = new Object[numberOfOperands];
+                        for (int j = 0; j < numberOfOperands; j++) {
+                            values[j] = stack.pop().getValue();
+                        }
+                        evaluate = joinConditionOperator.evaluate(values);
                         stack.push(new JoinConditionBooleanValue(evaluate));
                         break;
                     default:

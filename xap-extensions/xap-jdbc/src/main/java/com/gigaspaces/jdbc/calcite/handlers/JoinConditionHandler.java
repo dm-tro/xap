@@ -34,6 +34,7 @@ public class JoinConditionHandler {
     public TableContainer handleRexCall(RexCall call) {
         TableContainer leftContainer = null;
         switch (call.getKind()) {
+            case NOT:
             case EQUALS:
             case NOT_EQUALS:
             case GREATER_THAN:
@@ -46,10 +47,7 @@ public class JoinConditionHandler {
             case OR:
             case AND:
                 int operandsSize = call.getOperands().size();
-                int numOfOperators = (operandsSize + 1) / 2; // round up integer division [(numerator + denominator-1) / denominator]
-                for (int i = 0; i < numOfOperators; i++) {
-                    joinInfo.addJoinCondition(JoinConditionOperator.getCondition(call.getKind()));
-                }
+                joinInfo.addJoinCondition(JoinConditionOperator.getCondition(call.getKind()).setNumberOfOperands(operandsSize));
                 for (int i = 0; i < operandsSize; i++) {
                     leftContainer = handleSingleJoinCondition(join, (RexCall) call.getOperands().get(i));
                 }
@@ -63,6 +61,9 @@ public class JoinConditionHandler {
 
     private TableContainer handleSingleJoinCondition(GSJoin join, RexCall rexCall) {
         switch (rexCall.getKind()) {
+            case NOT:
+                joinInfo.addJoinCondition(JoinConditionOperator.getCondition(rexCall.getKind()).setNumberOfOperands(1));
+                return handleSingleJoinCondition(join, (RexCall) rexCall.getOperands().get(0));
             case EQUALS:
             case NOT_EQUALS:
             case GREATER_THAN:
@@ -112,7 +113,7 @@ public class JoinConditionHandler {
                 } catch (SQLException e) {
                     throw new SQLExceptionWrapper(e);//throw as runtime.
                 }
-                joinInfo.addJoinCondition(JoinConditionOperator.getCondition(rexCall.getKind()));
+                joinInfo.addJoinCondition(JoinConditionOperator.getCondition(rexCall.getKind()).setNumberOfOperands(2));
                 joinInfo.addJoinCondition(new JoinConditionColumnValue(c));
                 joinInfo.addJoinCondition(new JoinConditionColumnValue(new LiteralColumn(literalValue)));
                 return table; //TODO: @ not good!. not the left always
@@ -144,7 +145,7 @@ public class JoinConditionHandler {
         if (rightContainer.getJoinInfo() == null) {
             rightContainer.setJoinInfo(joinInfo);
         }
-        joinInfo.addJoinCondition(JoinConditionOperator.getCondition(rexCall.getKind()));
+        joinInfo.addJoinCondition(JoinConditionOperator.getCondition(rexCall.getKind()).setNumberOfOperands(2));
         joinInfo.addJoinCondition(new JoinConditionColumnValue(rightColumn));
         joinInfo.addJoinCondition(new JoinConditionColumnValue(leftColumn));
 
