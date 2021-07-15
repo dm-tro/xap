@@ -54,6 +54,7 @@ public class SQLFunctionsExtended {
         functions.put("ARRAY_UPPER", new UnsupportedSqlFunction("ARRAY_UPPER"));
         functions.put("GENERATE_SERIES", new UnsupportedSqlFunction("GENERATE_SERIES"));
         functions.put("PG_GET_EXPR", new PgGetExprSqlFunction());
+        functions.put("EXTRACT", new ExtractSqlFunction());
     }
 
     public static Map<String, SqlFunction> getFunctions() {

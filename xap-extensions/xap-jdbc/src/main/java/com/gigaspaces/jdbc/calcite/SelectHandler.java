@@ -1,11 +1,11 @@
 package com.gigaspaces.jdbc.calcite;
 
 import com.gigaspaces.jdbc.QueryExecutor;
-import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.calcite.handlers.CaseConditionHandler;
 import com.gigaspaces.jdbc.calcite.handlers.ConditionHandler;
 import com.gigaspaces.jdbc.calcite.handlers.SingleTableProjectionHandler;
 import com.gigaspaces.jdbc.calcite.pg.PgCalciteTable;
+import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.table.*;
 import com.gigaspaces.query.sql.functions.extended.LocalSession;
@@ -120,12 +120,13 @@ public class SelectHandler extends RelShuttleImpl {
     private FunctionCallColumn getFunctionCallColumn(RexProgram program, RexCall rexCall) {
         SqlOperator sqlFunction = rexCall.op;
         List<IQueryColumn> params = new ArrayList<>();
+        DateTypeResolver castType = new DateTypeResolver();
         for (RexNode operand : rexCall.getOperands()) {
             if (operand.isA(SqlKind.LOCAL_REF)) {
                 RexNode funcArgument = program.getExprList().get(((RexLocalRef) operand).getIndex());
                 if (funcArgument.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) funcArgument;
-                    params.add(new LiteralColumn(CalciteUtils.getValue(literal)));
+                    params.add(new LiteralColumn(CalciteUtils.getValue(literal, castType)));
                 } else if (funcArgument instanceof RexCall) { //operator
                     RexCall function= (RexCall) funcArgument;
                     params.add(getFunctionCallColumn(program, function));
@@ -133,7 +134,7 @@ public class SelectHandler extends RelShuttleImpl {
             }
 
         }
-        return new FunctionCallColumn(session, params, sqlFunction.getName(), null, null, true, -1);
+        return new FunctionCallColumn(session, params, sqlFunction.getName(), null, null, true, -1, castType.getResolvedDateType());
     }
 
     private void handleSort(GSSort sort) {
@@ -225,7 +226,7 @@ public class SelectHandler extends RelShuttleImpl {
         List<String> inputFields = program.getInputRowType().getFieldNames();
         List<String> outputFields = program.getOutputRowType().getFieldNames();
         queryExecutor.addFieldCount(outputFields.size());
-        new SingleTableProjectionHandler(program, tableContainer, other.equals(root), queryExecutor).project();
+        new SingleTableProjectionHandler(session, program, tableContainer, other.equals(root), queryExecutor).project();
         ConditionHandler conditionHandler = new ConditionHandler(program, queryExecutor, inputFields, tableContainer);
         if (program.getCondition() != null) {
             program.getCondition().accept(conditionHandler);

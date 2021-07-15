@@ -1,5 +1,6 @@
 package com.gigaspaces.jdbc.calcite.utils;
 
+import com.gigaspaces.jdbc.calcite.DateTypeResolver;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 
@@ -8,6 +9,10 @@ import java.math.BigDecimal;
 public class CalciteUtils {
 
     public static Object getValue(RexLiteral literal) {
+        return getValue(literal, null);
+    }
+
+    public static Object getValue(RexLiteral literal, DateTypeResolver dateTypeResolver) {
         if (literal == null) {
             return null;
         }
@@ -31,8 +36,12 @@ public class CalciteUtils {
             case DATE:
             case TIMESTAMP:
             case TIME_WITH_LOCAL_TIME_ZONE:
-            case TIME:
+                if (dateTypeResolver != null) dateTypeResolver.setResolvedDateType(literal);
                 return literal.toString(); // we use our parsers with AbstractParser.parse
+            case TIME:
+                if (dateTypeResolver != null) dateTypeResolver.setResolvedDateType(literal);
+                String[] strings = literal.toString().split(":");
+                return String.join(":", strings[0], strings[1], strings[2]);
             case SYMBOL:
                 return literal.getValue();
             default:
@@ -77,5 +86,7 @@ public class CalciteUtils {
             default:
                 throw new UnsupportedOperationException("Unsupported type: " + rexNode.getType().getSqlTypeName());
         }
+
     }
 }
+
