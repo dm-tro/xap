@@ -671,6 +671,7 @@ public class IOUtils {
         IClassSerializer serializer;
         if (SMART_EXTERNALIZABLE_ENABLED &&
                 obj instanceof SmartExternalizable &&
+                ((SmartExternalizable)obj).smartExternalizableSupported() &&
                 out instanceof MarshalOutputStream &&
                 targetSupportsSmartExternalizable()) {
             serializer = _smartExternalizableSerializer;

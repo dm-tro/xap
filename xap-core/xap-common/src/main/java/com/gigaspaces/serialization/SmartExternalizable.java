@@ -27,4 +27,10 @@ import java.io.Externalizable;
  * @since 16.0
  */
 public interface SmartExternalizable extends Externalizable {
+    /**
+     * Determines if this instance supports smart exernalizabe.
+     */
+    default boolean smartExternalizableSupported() {
+        return true;
+    }
 }
