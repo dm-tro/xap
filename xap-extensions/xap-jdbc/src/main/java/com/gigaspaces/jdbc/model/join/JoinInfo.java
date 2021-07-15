@@ -61,17 +61,19 @@ public class JoinInfo {
             if (joinCondition.isOperator()) {
                 JoinConditionOperator joinConditionOperator = (JoinConditionOperator) joinCondition;
                 boolean evaluate;
-                switch (joinConditionOperator) {
+                switch (joinConditionOperator.getSqlKind()) {
                     case NOT:
+                    case IS_NULL:
+                    case IS_NOT_NULL:
                         evaluate = joinConditionOperator.evaluate(stack.pop().getValue());
                         stack.push(new JoinConditionBooleanValue(evaluate));
                         break;
-                    case EQ:
-                    case NE:
-                    case LT:
-                    case LE:
-                    case GT:
-                    case GE:
+                    case EQUALS:
+                    case NOT_EQUALS:
+                    case LESS_THAN:
+                    case LESS_THAN_OR_EQUAL:
+                    case GREATER_THAN:
+                    case GREATER_THAN_OR_EQUAL:
                     case LIKE:
                         evaluate = joinConditionOperator.evaluate(stack.pop().getValue(), stack.pop().getValue());
                         stack.push(new JoinConditionBooleanValue(evaluate));

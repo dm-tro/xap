@@ -3,36 +3,32 @@ package com.gigaspaces.jdbc.model.join;
 import com.gigaspaces.jdbc.model.result.TableRowUtils;
 import org.apache.calcite.sql.SqlKind;
 
-import java.util.Arrays;
 import java.util.Objects;
 
-public enum JoinConditionOperator implements JoinCondition {
-    NOT, EQ, NE, GT, GE, LT, LE, LIKE, OR, AND;
+public class JoinConditionOperator implements JoinCondition {
+    private final SqlKind sqlKind;
+    private final int numberOfOperands;
 
-    int numberOfOperands;
+    JoinConditionOperator(SqlKind sqlKind, int numberOfOperands) {
+        this.sqlKind = sqlKind;
+        this.numberOfOperands = numberOfOperands;
+    }
 
-    public static JoinConditionOperator getCondition(SqlKind sqlKind) {
+    public static JoinConditionOperator getConditionOperator(SqlKind sqlKind, int numberOfOperands) {
         switch (sqlKind) {
+            case IS_NULL:
+            case IS_NOT_NULL:
             case NOT:
-                return NOT;
             case EQUALS:
-                return EQ;
             case NOT_EQUALS:
-                return NE;
             case GREATER_THAN:
-                return GT;
             case GREATER_THAN_OR_EQUAL:
-                return GE;
             case LESS_THAN:
-                return LT;
             case LESS_THAN_OR_EQUAL:
-                return LE;
             case LIKE:
-                return LIKE;
             case OR:
-                return OR;
             case AND:
-                return AND;
+                return new JoinConditionOperator(sqlKind, numberOfOperands);
             default:
                 throw new UnsupportedOperationException("Join with sqlType " + sqlKind + " is not supported");
         }
@@ -42,9 +38,8 @@ public enum JoinConditionOperator implements JoinCondition {
         return numberOfOperands;
     }
 
-    public JoinConditionOperator setNumberOfOperands(int numberOfOperands) {
-        this.numberOfOperands = numberOfOperands;
-        return this;
+    public SqlKind getSqlKind() {
+        return sqlKind;
     }
 
     @Override
@@ -58,33 +53,40 @@ public enum JoinConditionOperator implements JoinCondition {
     }
 
     public boolean evaluate(Object... values) {
-        if (Arrays.stream(values).anyMatch(Objects::isNull)) {
-            return false;
-        }
-        switch (this) {
+        switch (this.sqlKind) {
+            case IS_NULL:
+                return values[0] == null;
+            case IS_NOT_NULL:
+                return values[0] != null;
             case NOT:
-                return !(boolean) values[0];
-            case EQ:
-                return Objects.equals(values[0], values[1]);
-            case NE:
-                return !Objects.equals(values[0], values[1]);
-            case GE:
-                return getCompareResult(values[0], values[1]) >= 0;
-            case GT:
-                return getCompareResult(values[0], values[1]) > 0;
-            case LE:
-                return getCompareResult(values[0], values[1]) <= 0;
-            case LT:
-                return getCompareResult(values[0], values[1]) < 0;
+                return values[0] != null && !(boolean) values[0];
+            case EQUALS:
+                return values[0] != null && values[1] != null && Objects.equals(values[0], values[1]);
+            case NOT_EQUALS:
+                return values[0] != null && values[1] != null && !Objects.equals(values[0], values[1]);
+            case GREATER_THAN_OR_EQUAL:
+                return values[0] != null && values[1] != null && getCompareResult(values[0], values[1]) >= 0;
+            case GREATER_THAN:
+                return values[0] != null && values[1] != null && getCompareResult(values[0], values[1]) > 0;
+            case LESS_THAN_OR_EQUAL:
+                return values[0] != null && values[1] != null && getCompareResult(values[0], values[1]) <= 0;
+            case LESS_THAN:
+                return values[0] != null && values[1] != null && getCompareResult(values[0], values[1]) < 0;
             case AND:
                 boolean ans = true;
                 for (Object value : values) {
+                    if (value == null) {
+                        return false;
+                    }
                     ans &= (boolean) value;
                 }
                 return ans;
             case OR:
                 ans = false;
                 for (Object value : values) {
+                    if (value == null) {
+                        return false;
+                    }
                     ans |= (boolean) value;
                 }
                 return ans;
