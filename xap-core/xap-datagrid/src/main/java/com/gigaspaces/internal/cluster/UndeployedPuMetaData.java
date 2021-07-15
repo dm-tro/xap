@@ -11,8 +11,7 @@ public class UndeployedPuMetaData {
     private String schema;
     private int numOfInstances;
     private int numOfBackups;
-
-
+    
     public UndeployedPuMetaData() {
     }
 
@@ -90,5 +89,19 @@ public class UndeployedPuMetaData {
 
     public void setNumOfBackups(int numOfBackups) {
         this.numOfBackups = numOfBackups;
+    }
+
+    @Override
+    public String toString() {
+        return "UndeployedPuMetaData{" +
+                "puName='" + puName + '\'' +
+                ", unDeployedAt='" + unDeployedAt + '\'' +
+                ", isPersistent=" + isPersistent +
+                ", lastPrimaryPerPartition=" + lastPrimaryPerPartition +
+                ", spaceInstancesHosts=" + spaceInstancesHosts +
+                ", schema='" + schema + '\'' +
+                ", numOfInstances=" + numOfInstances +
+                ", numOfBackups=" + numOfBackups +
+                '}';
     }
 }
