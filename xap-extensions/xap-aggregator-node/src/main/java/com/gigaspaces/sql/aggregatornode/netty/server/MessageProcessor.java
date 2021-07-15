@@ -34,6 +34,7 @@ public class MessageProcessor extends ChannelInboundHandlerAdapter {
     private final AuthenticationProvider authProvider;
 
     private boolean initRead;
+    private boolean isError;
 
     private final Session session = new Session();
 
@@ -61,6 +62,33 @@ public class MessageProcessor extends ChannelInboundHandlerAdapter {
     }
 
     void onMessage(ChannelHandlerContext ctx, char type, ByteBuf msg) throws Exception {
+        if (isError) {
+            switch (type) {
+                case 'P':
+                    isError = false;
+                    onParse(ctx, msg);
+
+                    break;
+                case 'Q':
+                    isError = false;
+                    onQuery(ctx, msg);
+
+                    break;
+
+                case 'S':
+                case 'B':
+                case 'D':
+                case 'E':
+                    break;
+
+                default:
+                    throw new BreakingException(ErrorCodes.PROTOCOL_VIOLATION, "Unexpected message type: " + type);
+            }
+
+            return;
+        }
+
+
         switch (type) {
             case 0:
                 onInit(ctx, msg);
@@ -133,6 +161,7 @@ public class MessageProcessor extends ChannelInboundHandlerAdapter {
         } else {
             writeReadyForQuery(buf);
             ctx.write(buf);
+            isError = true;
         }
     }
 

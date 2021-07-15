@@ -331,4 +331,32 @@ class ServerBeanTest extends AbstractServerTest{
             DumpUtils.checkResult(res, expected);
         }
     }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testNonBreakingExceptionInTheMiddle(boolean simple) throws Exception {
+        try (Connection conn = connect(simple)) {
+            final String goodQuery = "SELECT * from pg_class where 1 = 1";
+            final String badQuery = "SELECT * from pg_clazz";
+            String expected = "" +
+"| oid | relname                                               | relnamespace | reltype | relowner | relam | relfilenode | reltablespace | relpages | reltuples | reltoastrelid | relhasindex | relisshared | relkind | relnatts | relchecks | reltriggers | relhasrules | relhastriggers | relhassubclass | relacl | reloptions |\n" +
+"| --- | ----------------------------------------------------- | ------------ | ------- | -------- | ----- | ----------- | ------------- | -------- | --------- | ------------- | ----------- | ----------- | ------- | -------- | --------- | ----------- | ----------- | -------------- | -------------- | ------ | ---------- |\n" +
+"| 1   | java.lang.Object                                      | 0            | 0       | 0        | 0     | 0           | 0             | 0        | 100.0     | 0             | false       | false       | r       | 0        | 0         | 0           | false       | false          | false          | null   | null       |\n" +
+"| 2   | com.gigaspaces.sql.aggregatornode.netty.server.MyPojo | 0            | 0       | 0        | 0     | 0           | 0             | 0        | 100.0     | 0             | false       | false       | r       | 11       | 0         | 0           | false       | false          | false          | null   | null       |\n";
+
+            try (PreparedStatement statement = conn.prepareStatement(goodQuery)) {
+                assertTrue(statement.execute());
+                DumpUtils.checkResult(statement.getResultSet(), expected);
+            }
+
+            try (PreparedStatement statement = conn.prepareStatement(badQuery)) {
+                assertThrows(SQLException.class, statement::execute);
+            }
+
+            try (PreparedStatement statement = conn.prepareStatement(goodQuery)) {
+                assertTrue(statement.execute());
+                DumpUtils.checkResult(statement.getResultSet(), expected);
+            }
+        }
+    }
 }
