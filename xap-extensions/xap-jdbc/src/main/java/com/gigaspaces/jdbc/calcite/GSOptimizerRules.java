@@ -4,7 +4,6 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.rules.DateRangeRules;
-import org.apache.calcite.rel.rules.JoinPushThroughJoinRule;
 import org.apache.calcite.rel.rules.PruneEmptyRules;
 
 import java.util.ArrayList;
@@ -74,9 +73,12 @@ public class GSOptimizerRules {
         CoreRules.FILTER_AGGREGATE_TRANSPOSE,
         CoreRules.PROJECT_WINDOW_TRANSPOSE,
         CoreRules.MATCH,
-        CoreRules.JOIN_COMMUTE,
-        JoinPushThroughJoinRule.RIGHT,
-        JoinPushThroughJoinRule.LEFT,
+        /* As soon as these rules are disabled,
+         *  we should not observe non-left-deep trees in general
+         *  (unless there some complex subqueries where the bushy trees are inevitable).*/
+//        CoreRules.JOIN_COMMUTE,
+//        JoinPushThroughJoinRule.RIGHT,
+//        JoinPushThroughJoinRule.LEFT,
         CoreRules.SORT_PROJECT_TRANSPOSE,
         CoreRules.SORT_JOIN_TRANSPOSE,
         CoreRules.SORT_REMOVE_CONSTANT_KEYS,
