@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableList;
 import com.j_spaces.jdbc.ResponsePacket;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -54,6 +55,8 @@ public class QueryProviderImpl implements QueryProvider {
 
         try {
             statements.put(stmt, prepareStatement(session, stmt, qry, paramTypes));
+        } catch (ProtocolException e) {
+            throw e;
         } catch (Exception e) {
             throw new NonBreakingException(ErrorCodes.SYNTAX_ERROR, "Failed to prepare statement", e);
         }
@@ -175,7 +178,7 @@ public class QueryProviderImpl implements QueryProvider {
         GSOptimizer optimizer = new GSOptimizer(session.getSpace());
         try {
             return prepareStatement(session, name, optimizer, paramTypes, optimizer.parse(query));
-        } catch (SqlParseException e) {
+        } catch (CalciteException | SqlParseException e) {
             throw new ParseException(e.getMessage(), e);
         }
     }
