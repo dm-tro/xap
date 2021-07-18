@@ -11,6 +11,7 @@ public class CalciteDefaults {
 
     public static final String SUPPORT_INEQUALITY = "com.gs.jdbc.v3.support.inequality";
     public static final String SUPPORT_SEMICOLON_SEPARATOR = "com.gs.jdbc.v3.support.semicolon_separator";
+    public static final String SUPPORT_ROWNUM = "com.gs.jdbc.v3.support.rownum";
 
 
     public static boolean isCalciteDriverPropertySet() {

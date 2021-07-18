@@ -99,8 +99,14 @@ public class CalciteQueryHandler {
         if (isCalcitePropertySet(CalciteDefaults.SUPPORT_INEQUALITY, properties)) {
             query = query.replaceAll("!=", "<>");
         }
-
+        //replace rownum with row_number() if needed
+        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_ROWNUM, properties)) {
+            query = replaceRowNum( query );
+        }
         return query;
     }
-}
 
+    public static String replaceRowNum(String query) {
+        return query.replaceAll(" (?i)rownum", " row_number()");
+    }
+}
