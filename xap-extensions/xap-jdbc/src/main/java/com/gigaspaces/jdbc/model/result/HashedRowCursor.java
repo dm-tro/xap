@@ -57,4 +57,9 @@ public class HashedRowCursor implements Cursor<TableRow>{
     public boolean isBeforeFirst() {
         return iterator == null;
     }
+
+    @Override
+    public void setCurrent(TableRow current) {
+        this.current = current;
+    }
 }

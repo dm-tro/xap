@@ -36,6 +36,11 @@ public class RowScanCursor implements Cursor<TableRow> {
         return iterator == null;
     }
 
+    @Override
+    public void setCurrent(TableRow current) {
+        this.current = current;
+    }
+
     private Iterator<TableRow> iterator() {
         if (iterator == null)
             iterator = rows.iterator();

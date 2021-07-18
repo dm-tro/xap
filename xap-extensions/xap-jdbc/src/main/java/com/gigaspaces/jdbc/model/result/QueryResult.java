@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public abstract class QueryResult {
     private final List<IQueryColumn> selectedColumns;
     private Cursor<TableRow> cursor;
-    private Map<TableRowGroupByKey,List<TableRow>> groupByRows = new HashMap<>();
+    private Map<TableRowGroupByKey, List<TableRow>> groupByRows = new HashMap<>();
 
     public QueryResult(List<IQueryColumn> selectedColumns) {
         this.selectedColumns = selectedColumns;
@@ -31,15 +31,12 @@ public abstract class QueryResult {
         return 0;
     }
 
-    public void setRows(List<TableRow> rows) {
-    }
-
-    private void setGroupByRowsResult( Map<TableRowGroupByKey,List<TableRow>> groupByRows) {
-        this.groupByRows = groupByRows;
-    }
-
-    public Map<TableRowGroupByKey,List<TableRow>> getGroupByRowsResult() {
+    public Map<TableRowGroupByKey, List<TableRow>> getGroupByRowsResult() {
         return groupByRows;
+    }
+
+    private void setGroupByRowsResult(Map<TableRowGroupByKey, List<TableRow>> groupByRows) {
+        this.groupByRows = groupByRows;
     }
 
     public void addRow(TableRow tableRow) {
@@ -47,6 +44,9 @@ public abstract class QueryResult {
 
     public List<TableRow> getRows() {
         return null;
+    }
+
+    public void setRows(List<TableRow> rows) {
     }
 
     public void filter(Predicate<TableRow> predicate) {
@@ -67,19 +67,26 @@ public abstract class QueryResult {
         }
         while (hasNext()) {
             JoinInfo joinInfo = getTableContainer().getJoinedTable().getJoinInfo();
-            if(joinInfo.getJoinType().equals(JoinInfo.JoinType.SEMI) && joinInfo.isHasMatch()) {
-                if(getCursor().next()) {
+            if (joinInfo.getJoinType().equals(JoinInfo.JoinType.SEMI) && joinInfo.isHasMatch()) {
+                if (getCursor().next()) {
                     joinedResult.reset();
                     joinInfo.resetHasMatch();
-                }
-                else{
+                } else {
                     return false;
                 }
             }
             if (joinedResult.next()) {
                 return true;
             }
+            if (joinInfo.getJoinType().equals(JoinInfo.JoinType.LEFT)) {// has no match, move the cursor, save state?!
+                if (!joinInfo.getLeftJoinHasMatch()){ //couldn't find any match with the current row.
+                    joinedResult.getCursor().setCurrent(null);
+                    joinInfo.setLeftJoinNoMatch();
+                    return true;
+                }
+            }
             if (getCursor().next()) {
+                joinInfo.resetHasMatch();
                 joinedResult.reset();
             } else {
                 return false;
@@ -156,44 +163,44 @@ public abstract class QueryResult {
                 fieldValues);
     }
 
-    public void groupBy(){
+    public void groupBy() {
 
-        Map<TableRowGroupByKey,TableRow> tableRows = new HashMap<>();
-        Map<TableRowGroupByKey,List<TableRow>> groupByTableRows = new HashMap<>();
+        Map<TableRowGroupByKey, TableRow> tableRows = new HashMap<>();
+        Map<TableRowGroupByKey, List<TableRow>> groupByTableRows = new HashMap<>();
 
-        for( TableRow tableRow : getRows() ){
+        for (TableRow tableRow : getRows()) {
             Object[] groupByValues = tableRow.getGroupByValues();
-            if( groupByValues.length > 0 ){
-                TableRowGroupByKey key = new TableRowGroupByKey( groupByValues );
-                tableRows.putIfAbsent( key, tableRow );
+            if (groupByValues.length > 0) {
+                TableRowGroupByKey key = new TableRowGroupByKey(groupByValues);
+                tableRows.putIfAbsent(key, tableRow);
 
                 List<TableRow> tableRowsList = groupByTableRows.computeIfAbsent(key, k -> new ArrayList<>());
-                tableRowsList.add( tableRow );
+                tableRowsList.add(tableRow);
             }
         }
-        if( !tableRows.isEmpty() ) {
-            setGroupByRowsResult( groupByTableRows );
-            setRows( new ArrayList<>(tableRows.values()) );
+        if (!tableRows.isEmpty()) {
+            setGroupByRowsResult(groupByTableRows);
+            setRows(new ArrayList<>(tableRows.values()));
         }
     }
 
     public void distinct() {
-        Map<TableRowGroupByKey,TableRow> tableRows = new HashMap<>();
-        for( TableRow tableRow : getRows() ){
+        Map<TableRowGroupByKey, TableRow> tableRows = new HashMap<>();
+        for (TableRow tableRow : getRows()) {
             Object[] distinctValues = tableRow.getDistinctValues();
-            if( distinctValues.length > 0 ){
-                tableRows.putIfAbsent( new TableRowGroupByKey( distinctValues ), tableRow );
+            if (distinctValues.length > 0) {
+                tableRows.putIfAbsent(new TableRowGroupByKey(distinctValues), tableRow);
             }
         }
-        if (!tableRows.isEmpty()){
-            setRows( new ArrayList<>(tableRows.values()));
+        if (!tableRows.isEmpty()) {
+            setRows(new ArrayList<>(tableRows.values()));
         }
 
     }
 
     public void addCaseColumnsToResults(List<CaseColumn> caseColumns) {
         if (this instanceof ExplainPlanQueryResult) return;
-        if(caseColumns.isEmpty()) return;
+        if (caseColumns.isEmpty()) return;
         List<TableRow> newRows = new ArrayList<>();
         for (TableRow row : getRows()) {
             newRows.add(new TableRow(row, caseColumns));
