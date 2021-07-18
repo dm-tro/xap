@@ -13,6 +13,7 @@ import com.gigaspaces.sql.aggregatornode.netty.exception.ProtocolException;
 import com.gigaspaces.sql.aggregatornode.netty.utils.*;
 import com.google.common.collect.ImmutableList;
 import com.j_spaces.jdbc.ResponsePacket;
+import org.apache.calcite.rel.externalize.RelWriterImpl;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.runtime.CalciteException;
@@ -21,6 +22,8 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.slf4j.Logger;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.*;
@@ -340,6 +343,12 @@ public class QueryProviderImpl implements QueryProvider {
             ThrowingSupplier<Iterator<Object[]>, ProtocolException> op = () -> {
                 try {
                     GSRelNode physicalPlan = statement.getOptimizer().optimize(query);
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    RelWriterImpl writer = new RelWriterImpl(pw, SqlExplainLevel.EXPPLAN_ATTRIBUTES, false);
+                    physicalPlan.explain(writer);
+                    System.out.println(sw);
+
                     LocalSession localSession = new LocalSession(session.getUsername());
                     ResponsePacket packet = handler.executeStatement(session.getSpace(), physicalPlan, params, localSession);
                     return new ArrayIterator<>(packet.getResultEntry().getFieldValues());
