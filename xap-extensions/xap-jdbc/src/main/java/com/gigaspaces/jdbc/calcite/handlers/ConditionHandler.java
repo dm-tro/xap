@@ -205,10 +205,10 @@ public class ConditionHandler extends RexShuttle {
                     throw new UnsupportedOperationException("Queries with NOT on non-boolean column are not supported yet");
                 }
                 range = new EqualValueRange(column, false);
-                if(table.getJoinInfo() != null){
-                    table.getJoinInfo().insertRangeToJoinInfo(range);
-                    return;
-                }
+//                if(table.getJoinInfo() != null){
+//                    table.getJoinInfo().insertRangeToJoinInfo(range);
+//                    return;
+//                }
                 break;
             default:
                 throw new UnsupportedOperationException(String.format("Queries with %s are not supported",sqlKind));

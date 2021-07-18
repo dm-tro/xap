@@ -19,48 +19,57 @@ public class JoinInfo {
     private boolean hasMatch;
     private boolean leftJoinNoMatch;
     private boolean leftJoinHasMatch;
+    private final boolean isEqui;
 
     public JoinInfo(IQueryColumn leftColumn, IQueryColumn rightColumn, JoinType joinType) {
         this.leftColumn = leftColumn;
         this.rightColumn = rightColumn;
         this.joinType = joinType;
+        this.isEqui = true;
     }
 
-    public JoinInfo(JoinType joinType) {
+    public JoinInfo(JoinType joinType, boolean isEqui) {
         this.leftColumn = null;
         this.rightColumn = null;
         this.joinType = joinType;
+        this.isEqui = isEqui;
     }
 
     public boolean checkJoinCondition() {
         if (joinType.equals(JoinType.LEFT)) {
             if (leftJoinNoMatch) {
                 leftJoinNoMatch = false;
-                leftJoinHasMatch = true;
-                hasMatch = true;
+                if (range != null) {
+                    boolean found = false;
+                    for (JoinCondition joinCondition : joinConditions) {
+                        if (joinCondition instanceof JoinConditionColumnValue) {
+                            IQueryColumn column = ((JoinConditionColumnValue) joinCondition).getColumn();
+                            if (range.getPath().equals(column.getName())) {
+                                hasMatch = range.getPredicate().execute(column.getCurrentValue());
+                                leftJoinHasMatch = true; //TODO: @sagiv use hasMatch?
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!found) {
+                        hasMatch = false;
+                    }
+                } else {
+                    leftJoinHasMatch = true;
+                    hasMatch = true;
+                }
             } else {
                 hasMatch = calculateConditions();
                 if (hasMatch) {
                     leftJoinHasMatch = true;
                 }
+                if (range != null) {
+                    hasMatch = false;
+                }
             }
         } else if (joinType.equals(JoinType.INNER) || joinType.equals(JoinType.SEMI)) {
             hasMatch = calculateConditions();
-        } else if (range != null) {
-            boolean found = false;
-            for (JoinCondition joinCondition : joinConditions) {
-                if (joinCondition instanceof JoinConditionColumnValue) {
-                    IQueryColumn column = ((JoinConditionColumnValue) joinCondition).getColumn();
-                    if (range.getPath().equals(column.getName())) {
-                        hasMatch = range.getPredicate().execute(column.getCurrentValue());
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if (!found) {
-                hasMatch = false;
-            }
         } else {
             hasMatch = true;
         }
@@ -131,6 +140,10 @@ public class JoinInfo {
 
     public boolean getLeftJoinHasMatch() {
         return this.leftJoinHasMatch;
+    }
+
+    public boolean isEquiJoin() {
+        return isEqui;
     }
 
     public IQueryColumn getLeftColumn() {

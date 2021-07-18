@@ -27,7 +27,7 @@ public class JoinConditionHandler {
     public JoinConditionHandler(GSJoin join, QueryExecutor queryExecutor) {
         this.join = join;
         this.queryExecutor = queryExecutor;
-        this.joinInfo = new JoinInfo(JoinInfo.JoinType.getType(join.getJoinType()));
+        this.joinInfo = new JoinInfo(JoinInfo.JoinType.getType(join.getJoinType()), join.analyzeCondition().isEqui());
     }
 
 

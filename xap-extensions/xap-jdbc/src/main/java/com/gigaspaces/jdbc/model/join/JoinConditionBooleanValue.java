@@ -16,4 +16,9 @@ public class JoinConditionBooleanValue implements JoinCondition {
     public boolean isOperator() {
         return false;
     }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
 }

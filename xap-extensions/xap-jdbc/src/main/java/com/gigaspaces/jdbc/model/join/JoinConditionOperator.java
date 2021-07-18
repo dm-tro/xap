@@ -105,4 +105,9 @@ public class JoinConditionOperator implements JoinCondition {
         Comparable second = TableRowUtils.castToComparable(rightValue);
         return first.compareTo(second);
     }
+
+    @Override
+    public String toString() {
+        return sqlKind + "(" + numberOfOperands + ")";
+    }
 }

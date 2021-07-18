@@ -22,4 +22,9 @@ public class JoinConditionColumnValue implements JoinCondition {
     public IQueryColumn getColumn() {
         return this.column;
     }
+
+    @Override
+    public String toString() {
+        return column + ": " + getValue();
+    }
 }
