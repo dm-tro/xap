@@ -6,17 +6,19 @@ public class UndeployedPuMetaData {
     private String puName;
     private String unDeployedAt;
     private boolean isPersistent;
-    private Map<Integer, LastPrimary> lastPrimaryPerPartition;
+    private Map<Integer, String> lastPrimaryPerPartition;
     private Map<String, String> spaceInstancesHosts;
     private String schema;
     private int numOfInstances;
     private int numOfBackups;
+    private boolean gracefulShutdown;
     
     public UndeployedPuMetaData() {
     }
 
-    public UndeployedPuMetaData(String puName, String unDeployedAt, boolean isPersistent, Map<Integer, LastPrimary> lastPrimaryPerPartition,
-                                Map<String, String> spaceInstancesHosts, String schema, int numOfInstances, int numOfBackups) {
+    public UndeployedPuMetaData(String puName, String unDeployedAt, boolean isPersistent, Map<Integer,
+                                String> lastPrimaryPerPartition, Map<String, String> spaceInstancesHosts,
+                                String schema, int numOfInstances, int numOfBackups, boolean gracefulShutdown) {
         this.puName = puName;
         this.unDeployedAt = unDeployedAt;
         this.isPersistent = isPersistent;
@@ -25,6 +27,7 @@ public class UndeployedPuMetaData {
         this.schema = schema;
         this.numOfInstances = numOfInstances;
         this.numOfBackups = numOfBackups;
+        this.gracefulShutdown = gracefulShutdown;
     }
 
     public String getPuName() {
@@ -47,11 +50,11 @@ public class UndeployedPuMetaData {
         return isPersistent;
     }
 
-    public Map<Integer, LastPrimary> getLastPrimaryPerPartition() {
+    public Map<Integer, String> getLastPrimaryPerPartition() {
         return lastPrimaryPerPartition;
     }
 
-    public void setLastPrimaryPerPartition(Map<Integer, LastPrimary> lastPrimaryPerPartition) {
+    public void setLastPrimaryPerPartition(Map<Integer, String> lastPrimaryPerPartition) {
         this.lastPrimaryPerPartition = lastPrimaryPerPartition;
     }
 
@@ -91,6 +94,14 @@ public class UndeployedPuMetaData {
         this.numOfBackups = numOfBackups;
     }
 
+    public boolean isGracefulShutdown() {
+        return gracefulShutdown;
+    }
+
+    public void setGracefulShutdown(boolean gracefulShutdown) {
+        this.gracefulShutdown = gracefulShutdown;
+    }
+
     @Override
     public String toString() {
         return "UndeployedPuMetaData{" +
@@ -102,6 +113,7 @@ public class UndeployedPuMetaData {
                 ", schema='" + schema + '\'' +
                 ", numOfInstances=" + numOfInstances +
                 ", numOfBackups=" + numOfBackups +
+                ", gracefulShutDown=" + gracefulShutdown +
                 '}';
     }
 }
