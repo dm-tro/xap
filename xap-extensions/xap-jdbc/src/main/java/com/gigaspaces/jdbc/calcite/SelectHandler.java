@@ -186,16 +186,12 @@ public class SelectHandler extends RelShuttleImpl {
         if(rexCall.getKind() != SqlKind.EQUALS){
             throw new UnsupportedOperationException("Only equal joins are supported");
         }
-        int left = join.getLeft().getRowType().getFieldCount();
         int leftIndex = ((RexInputRef) rexCall.getOperands().get(0)).getIndex();
         int rightIndex = ((RexInputRef) rexCall.getOperands().get(1)).getIndex();
-        String lColumn = join.getLeft().getRowType().getFieldNames().get(leftIndex);
-        String rColumn = join.getRight().getRowType().getFieldNames().get(rightIndex - left);
         TableContainer rightContainer = queryExecutor.getTableByColumnIndex(rightIndex);
         TableContainer leftContainer = queryExecutor.getTableByColumnIndex(leftIndex);
-        //TODO: @sagiv needed?- its already in the tables.
-        IQueryColumn rightColumn = rightContainer.addQueryColumn(rColumn, null, false, -1);
-        IQueryColumn leftColumn = leftContainer.addQueryColumn(lColumn, null, false, -1);
+        IQueryColumn rightColumn = queryExecutor.getColumnByColumnIndex(rightIndex);
+        IQueryColumn leftColumn = queryExecutor.getColumnByColumnIndex(leftIndex);
         rightContainer.setJoinInfo(new JoinInfo(leftColumn, rightColumn, JoinInfo.JoinType.getType(join.getJoinType())));
         if (leftContainer.getJoinedTable() == null) {
             if (!rightContainer.isJoined()) {
