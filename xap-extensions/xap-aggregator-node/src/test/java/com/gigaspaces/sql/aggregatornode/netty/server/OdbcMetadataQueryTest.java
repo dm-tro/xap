@@ -140,25 +140,25 @@ public class OdbcMetadataQueryTest extends AbstractServerTest {
         checkQuery(SELECT_TABLES);
     }
 
-    @Disabled("ColumnNotFoundException: Could not find column with name [oid]")
+    @Disabled("Only equal joins are supported")
     @Test
     public void testSelectAttributes1() throws Exception {
         checkQuery(SELECT_ATTRIBUTES_1);
     }
 
-    @Disabled("UnsupportedOperationException: Only equal joins are supported")
+    @Disabled("Only equal joins are supported")
     @Test
     public void testSelectAttributes2() throws Exception {
         checkQuery(SELECT_ATTRIBUTES_2);
     }
 
-    @Disabled("ColumnNotFoundException: Could not find column with name [indexrelid]")
+    @Disabled("Only equal joins are supported")
     @Test
     public void testSelectIndexes() throws Exception {
         checkQuery(SELECT_INDEXES);
     }
 
-    @Disabled("Missing CASE support")
+    @Disabled("Unexpected node kind expected CASE / INPUT_REF but was [OTHER_FUNCTION]")
     @Test
     public void testSelectConstraints() throws Exception {
         checkQuery(SELECT_CONSTRAINTS);
