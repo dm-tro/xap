@@ -27,4 +27,11 @@ import java.io.Externalizable;
  * @since 16.0
  */
 public interface SmartExternalizable extends Externalizable {
+    /**
+     * Indicates if smart externalizable serialization should detect shared references
+     * of instances within serializtion context
+     */
+    default boolean enabledSmartExternalizableWithReference() {
+        return false;
+    }
 }

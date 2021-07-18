@@ -21,6 +21,7 @@ import com.gigaspaces.internal.client.spaceproxy.ISpaceProxy;
 import com.gigaspaces.internal.io.IOUtils;
 import com.gigaspaces.internal.metadata.ITypeDesc;
 import com.gigaspaces.internal.transport.IEntryPacket;
+import com.gigaspaces.serialization.SmartExternalizable;
 import com.j_spaces.jdbc.*;
 import com.j_spaces.jdbc.builder.QueryTemplatePacket;
 import com.j_spaces.jdbc.executor.EntriesCursor;
@@ -38,7 +39,7 @@ import java.io.*;
  * @since 7.0
  */
 @com.gigaspaces.api.InternalApi
-public class QueryTableData implements Externalizable {
+public class QueryTableData implements SmartExternalizable {
     private static final long serialVersionUID = 1L;
 
     private String _tableName;
@@ -418,6 +419,11 @@ public class QueryTableData implements Externalizable {
     }
 
     @Override
+    public boolean enabledSmartExternalizableWithReference() {
+        return true;
+    }
+
+    @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeShort(buildFlags());
         if (_tableName != null)
@@ -441,6 +447,8 @@ public class QueryTableData implements Externalizable {
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         short flags = in.readShort();
+        _isJoined = (flags & FLAG_JOINED) != 0;
+        _hasAsterixSelectColumns = (flags & FLAG_ASTERISK_COLS) != 0;
         if ((flags & FLAG_TABLE_NAME) != 0)
             _tableName = IOUtils.readRepetitiveString(in);
         if ((flags & FLAG_TABLE_ALIAS) != 0)
@@ -455,8 +463,6 @@ public class QueryTableData implements Externalizable {
         if ((flags & FLAG_JOIN_TABLE) != 0)
             _joinTable = IOUtils.readObject(in);
         _joinType = Join.JoinType.fromCode(in.readByte());
-        _isJoined = (flags & FLAG_JOINED) != 0;
-        _hasAsterixSelectColumns = (flags & FLAG_ASTERISK_COLS) != 0;
         if ((flags & FLAG_SUBQUERY) != 0)
            subQuery = IOUtils.readObject(in);
     }

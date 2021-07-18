@@ -50,9 +50,9 @@ import org.slf4j.LoggerFactory;
 @com.gigaspaces.api.InternalApi
 public class MarshalInputStream
         extends AnnotatedObjectInputStream {
-    private static final Logger _logger = LoggerFactory.getLogger(Constants.LOGGER_LRMI_MARSHAL);
-    private static final int CODE_DISABLED = -1;
-    private static final int CODE_NULL = 0;
+    private static final Logger _logger = LoggerFactory.getLogger(Constants.LOGGER_LRMI_MARSHAL + ".in");
+    private static final int CODE_DISABLED = MarshalConstants.CODE_DISABLED;
+    private static final int CODE_NULL = MarshalConstants.CODE_NULL;
 
     /**
      * maps keywords for primitive types and void to corresponding Class objects.
@@ -131,19 +131,55 @@ public class MarshalInputStream
         if (code == CODE_DISABLED)
             return readObject();
 
-        // Look for cached constructor by code:
-        IConstructor<?> ctor = _context._externalizableCtorCache.get(code);
-        // If object constructor is not cached, read it from the stream and cache it for next time:
-        if (ctor == null) {
-            Class<?> clazz = (Class<?>) readObject();
-            ctor = ReflectionUtil.createCtor(clazz);
-            _context._externalizableCtorCache.put(code, ctor);
+        final boolean smartRefRoot = code == MarshalConstants.CODE_ENABLE_REFS;
+        final boolean smartRefEnabled = smartRefRoot || !_context._refMap.isEmpty();
+        if (_logger.isDebugEnabled())
+            _logger.debug("smartRefRoot: {}, smartRefEnabled: {}", smartRefRoot, smartRefEnabled);
+        final int smartRef = smartRefRoot ? readInt() : code;
+
+        try {
+            if (smartRefRoot) {
+                if (_logger.isDebugEnabled())
+                    _logger.debug("SmartExternalizable is enabled, root ref: {}", smartRef);
+            }
+            if (smartRefEnabled) {
+                Object cachedRef = _context._refMap.get(smartRef);
+                if (cachedRef != null) {
+                    if (_logger.isDebugEnabled())
+                        _logger.debug("SmartExternalizable is skipping deserialization of {} ({}) since it was already deserialized with ref {} ",
+                                System.identityHashCode(cachedRef), cachedRef.getClass().getName(), smartRef);
+                    return cachedRef;
+                }
+                // If smart cache and ref is not available yet, read code (prev code was actually ref):
+                code = readInt();
+            }
+            // Look for cached constructor by code:
+            IConstructor<?> ctor = _context._externalizableCtorCache.get(code);
+            // If object constructor is not cached, read it from the stream and cache it for next time:
+            if (ctor == null) {
+                Class<?> clazz = (Class<?>) readObject();
+                ctor = ReflectionUtil.createCtor(clazz);
+                _context._externalizableCtorCache.put(code, ctor);
+            }
+            // Instantiate object using cached factory which invokes default constructor:
+            Object value = ctor.newInstance();
+            // If smart ref enabled, map ref to value before read to make it available for nested graphs:
+            if (smartRefEnabled) {
+                if (_logger.isDebugEnabled())
+                    _logger.debug("SmartExternalizable is first-time deserializing {} ({}) to ref {}",
+                            System.identityHashCode(value), value.getClass().getName(), smartRef);
+                _context._refMap.put(smartRef, value);
+            }
+            // Deserialize object using standard Externalizable:
+            ((Externalizable) value).readExternal(this);
+            return value;
+        } finally {
+            if (smartRefRoot) {
+                if (_logger.isDebugEnabled())
+                    _logger.debug("SmartExternalizable root serialization of {} completed, clearing ref map", smartRef);
+                _context._refMap.clear();
+            }
         }
-        // Instantiate object using cached factory which invokes default constructor:
-        Object value = ctor.newInstance();
-        // Deserialize object using standard Externalizable:
-        ((Externalizable)value).readExternal(this);
-        return value;
     }
 
     /**
@@ -314,7 +350,7 @@ public class MarshalInputStream
         private final static long NULL_CL_MARKER = -1;
         private final IntegerObjectMap<Object> _repetitiveObjectsCache = CollectionsFactory.getInstance().createIntegerObjectMap();
         public final IntegerObjectMap<IConstructor<?>> _externalizableCtorCache = CollectionsFactory.getInstance().createIntegerObjectMap();
-
+        public final IntegerObjectMap<Object> _refMap = CollectionsFactory.getInstance().createIntegerObjectMap();
 
         public IntegerObjectMap<Object> getRepetitiveObjectsCache() {
             return _repetitiveObjectsCache;
@@ -421,6 +457,7 @@ public class MarshalInputStream
             annotationMap.clear();
             _repetitiveObjectsCache.clear();
             _externalizableCtorCache.clear();
+            _refMap.clear();
         }
 
         /**

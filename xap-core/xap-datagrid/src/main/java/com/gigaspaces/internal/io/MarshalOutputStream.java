@@ -32,6 +32,8 @@ import java.io.OutputStream;
 import java.rmi.server.RMIClassLoader;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,9 +66,9 @@ import org.slf4j.LoggerFactory;
 @com.gigaspaces.api.InternalApi
 public class MarshalOutputStream
         extends AnnotatedObjectOutputStream {
-    private static final Logger _logger = LoggerFactory.getLogger(Constants.LOGGER_LRMI_MARSHAL);
-    private static final int CODE_DISABLED = -1;
-    private static final int CODE_NULL = 0;
+    private static final Logger _logger = LoggerFactory.getLogger(Constants.LOGGER_LRMI_MARSHAL + ".out");
+    private static final int CODE_DISABLED = MarshalConstants.CODE_DISABLED;
+    private static final int CODE_NULL = MarshalConstants.CODE_NULL;
 
     private final Context _context;
     private final boolean _optimize;
@@ -149,21 +151,57 @@ public class MarshalOutputStream
             return;
         }
 
-        // Look for object's class in cache:
-        Class<? extends SmartExternalizable> objClass = obj.getClass();
-        int code = _context.getExternalizableObjectCode(objClass);
-        // If object is cached, write it using the cached code and externalizable:
-        if (code != CODE_NULL) {
-            writeInt(code);
-            obj.writeExternal(this);
-        } else {
-            // Add class to cache, return assigned code:
-            code = _context.cacheExternalizable(objClass);
-            // Write code and class, so reader can populate its cache accordingly:
-            writeInt(code);
-            writeObject(obj.getClass());
-            // Write actual object
-            obj.writeExternal(this);
+        final boolean smartRefRequired = obj.enabledSmartExternalizableWithReference();
+        final boolean smartRefRoot = smartRefRequired && _context._refMap.isEmpty();
+        final boolean smartRefEnabled = smartRefRequired || !_context._refMap.isEmpty();
+        if (_logger.isDebugEnabled())
+            _logger.debug("smartRefRequired: {}, smartRefRoot: {}, smartRefEnabled: {}", smartRefRequired, smartRefRoot, smartRefEnabled);
+        try {
+            // Handle smart refs:
+            if (smartRefRoot) {
+                if (_logger.isDebugEnabled())
+                    _logger.debug("SmartExternalizable ref root: {} ({})", System.identityHashCode(obj), obj.getClass().getName());
+                writeInt(MarshalConstants.CODE_ENABLE_REFS);
+            }
+            if (smartRefEnabled) {
+                Integer ref = _context._refMap.get(obj);
+                if (ref != null) {
+                    if (_logger.isDebugEnabled())
+                        _logger.debug("SmartExternalizable is skipping serialization of {} ({}) since it was already serialized with ref {}",
+                                System.identityHashCode(obj), obj.getClass().getName(), ref);
+                    writeInt(ref);
+                    return;
+                } else {
+                    ref = _context._refMap.size() + 1;
+                    if (_logger.isDebugEnabled())
+                        _logger.debug("SmartExternalizable is first-time serializing {} ({}) to ref {}",
+                                System.identityHashCode(obj), obj.getClass().getName(), ref);
+                    _context._refMap.put(obj, ref);
+                    writeInt(ref);
+                }
+            }
+            // Look for object's class in cache:
+            Class<? extends SmartExternalizable> objClass = obj.getClass();
+            int code = _context.getExternalizableObjectCode(objClass);
+            // If object is cached, write it using the cached code and externalizable:
+            if (code != CODE_NULL) {
+                writeInt(code);
+                obj.writeExternal(this);
+            } else {
+                // Add class to cache, return assigned code:
+                code = _context.cacheExternalizable(objClass);
+                // Write code and class, so reader can populate its cache accordingly:
+                writeInt(code);
+                writeObject(obj.getClass());
+                // Write actual object
+                obj.writeExternal(this);
+            }
+        } finally {
+            if (smartRefRoot) {
+                if (_logger.isDebugEnabled())
+                    _logger.debug("SmartExternalizable root serialization of {} completed, clearing ref map", System.identityHashCode(obj));
+                _context._refMap.clear();
+            }
         }
     }
 
@@ -252,8 +290,10 @@ public class MarshalOutputStream
         private final HashMap<Long, ClassLoaderContext> _classLoaderContextMap = new HashMap<Long, ClassLoaderContext>();
         private final ObjectIntegerMap<Object> _repetitiveObjectsCache = CollectionsFactory.getInstance().createObjectIntegerMap();
         private final ObjectIntegerMap<Class<?>> _externalizableObjectsCache = CollectionsFactory.getInstance().createObjectIntegerMap();
-        private int _repetitiveObjectCounter = CODE_NULL + 1;
-        private int _externalizableObjectCounter = CODE_NULL + 1;
+        private final Map<Object, Integer> _refMap = new IdentityHashMap<>();
+        private int _repetitiveObjectCounter = MarshalConstants.FIRST_REPETITIVE;
+        private int _externalizableObjectCounter = MarshalConstants.FIRST_EXTERNALIZABLE;
+
 
         private final static ClassLoaderContext REMOVED_CONTEXT_MARKER = new ClassLoaderContext(-2L);
         private final static long NULL_CL_MARKER = -1;
@@ -352,9 +392,10 @@ public class MarshalOutputStream
             }
             _classLoaderContextMap.clear();
             _repetitiveObjectsCache.clear();
-            _repetitiveObjectCounter = CODE_NULL + 1;
+            _repetitiveObjectCounter = MarshalConstants.FIRST_REPETITIVE;
             _externalizableObjectsCache.clear();
-            _externalizableObjectCounter = CODE_NULL + 1;
+            _externalizableObjectCounter = MarshalConstants.FIRST_EXTERNALIZABLE;
+            _refMap.clear();
         }
 
         /**

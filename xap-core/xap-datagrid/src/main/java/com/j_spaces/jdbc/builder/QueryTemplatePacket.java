@@ -811,6 +811,11 @@ public class QueryTemplatePacket extends ExternalTemplatePacket {
     }
 
     @Override
+    public boolean enabledSmartExternalizableWithReference() {
+        return true;
+    }
+
+    @Override
     protected void writeExternal(ObjectOutput out, PlatformLogicalVersion version) throws IOException {
         super.writeExternal(out, version);
         serialize(out, version);

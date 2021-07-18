@@ -36,7 +36,7 @@ import java.util.function.Function;
  * @since 7.0
  */
 @com.gigaspaces.api.InternalApi
-public class QueryColumnData implements Externalizable {
+public class QueryColumnData implements SmartExternalizable {
     private static final long serialVersionUID = 1L;
 
     protected static final String ASTERIX_COLUMN = "*";
