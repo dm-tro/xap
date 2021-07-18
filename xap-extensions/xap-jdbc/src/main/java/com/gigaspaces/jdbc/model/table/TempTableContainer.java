@@ -23,7 +23,6 @@ public class TempTableContainer extends TableContainer {
     protected final List<String> allColumnNamesSorted = new ArrayList<>();
     private TableContainer joinedTable;
     private boolean isJoined;
-    private JoinInfo joinInfo;
 
     public TempTableContainer(String alias) {
         this.alias = alias;
@@ -177,20 +176,5 @@ public class TempTableContainer extends TableContainer {
                 .orElseThrow(() -> new ColumnNotFoundException("Could not find column with name [" + columnName + "]"));
 
         return ObjectConverter.convert(value, column.getReturnType());
-    }
-
-    @Override
-    public JoinInfo getJoinInfo() {
-        return joinInfo;
-    }
-
-    @Override
-    public void setJoinInfo(JoinInfo joinInfo) {
-        this.joinInfo = joinInfo;
-    }
-
-    @Override
-    public boolean checkJoinCondition() {
-        return joinInfo.checkJoinCondition();
     }
 }

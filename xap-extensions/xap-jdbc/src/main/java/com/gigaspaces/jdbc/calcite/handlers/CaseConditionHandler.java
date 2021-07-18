@@ -156,7 +156,8 @@ public class CaseConditionHandler extends RexShuttle {
 
         TableContainer tableForColumn = getTableForColumn(column);
         try {
-            value = SQLUtil.cast(((ConcreteTableContainer) tableForColumn).getTypeDesc(), column, value, false);
+            if (tableForColumn instanceof ConcreteTableContainer)
+                value = SQLUtil.cast(((ConcreteTableContainer) tableForColumn).getTypeDesc(), column, value, false);
         } catch (SQLException e) {
             throw new SQLExceptionWrapper(e);//throw as runtime.
         }

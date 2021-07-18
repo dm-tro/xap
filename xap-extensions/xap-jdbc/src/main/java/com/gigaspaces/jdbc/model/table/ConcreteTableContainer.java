@@ -40,7 +40,6 @@ public class ConcreteTableContainer extends TableContainer {
     private QueryResult queryResult;
     private TableContainer joinedTable;
     private boolean joined = false;
-    private JoinInfo joinInfo;
 
     public ConcreteTableContainer(String name, String alias, IJSpace space) {
         this.space = space;
@@ -349,23 +348,6 @@ public class ConcreteTableContainer extends TableContainer {
     public Object getColumnValue(String columnName, Object value) throws SQLException {
         return SQLUtil.cast(typeDesc, columnName, value, false);
 
-    }
-
-    @Override
-    public JoinInfo getJoinInfo() {
-        return joinInfo;
-    }
-
-    @Override
-    public void setJoinInfo(JoinInfo joinInfo) {
-        this.joinInfo = joinInfo;
-    }
-
-    @Override
-    public boolean checkJoinCondition() {
-        if (joinInfo == null)
-            return true;
-        return joinInfo.checkJoinCondition();
     }
 
     public ITypeDesc getTypeDesc() {

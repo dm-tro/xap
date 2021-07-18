@@ -17,6 +17,7 @@ public abstract class TableContainer {
     private final List<OrderColumn> orderColumns = new ArrayList<>();
     private final List<AggregationColumn> aggregationColumns = new ArrayList<>();
     private final List<ConcreteColumn> groupByColumns = new ArrayList<>();
+    protected JoinInfo joinInfo;
     private boolean distinct;
     private Expression exprTree;
 
@@ -66,11 +67,19 @@ public abstract class TableContainer {
                 columnName));
     }
 
-    public abstract JoinInfo getJoinInfo();
+    public JoinInfo getJoinInfo() {
+        return joinInfo;
+    }
 
-    public abstract void setJoinInfo(JoinInfo joinInfo);
+    public void setJoinInfo(JoinInfo joinInfo) {
+        this.joinInfo = joinInfo;
+    }
 
-    public abstract boolean checkJoinCondition();
+    public boolean checkJoinCondition() {
+        if (joinInfo == null)
+            return true;
+        return joinInfo.checkJoinCondition();
+    }
 
     public void setExpTree(Expression value) {
         this.exprTree = value;
