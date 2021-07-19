@@ -13,7 +13,7 @@ import java.util.List;
 public class TieredStorageMachineCleaner {
         private static Logger logger = LoggerFactory.getLogger(TieredStorageMachineCleaner.class);
 
-    public static void deleteTieredStorageData(String spaceName) throws Exception {
+    public static void deleteTieredStorageData(String spaceName) {
         if (logger.isDebugEnabled()){
             logger.debug("Trying to delete db of space {}", spaceName);
         }
@@ -36,6 +36,5 @@ public class TieredStorageMachineCleaner {
            // folder.delete();
             logger.info("Successfully deleted db of space {} in path {}", spaceName, folder.getAbsolutePath());
         }
-        throw new Exception("++++++++++++++++++++++++++check");
     }
 }
