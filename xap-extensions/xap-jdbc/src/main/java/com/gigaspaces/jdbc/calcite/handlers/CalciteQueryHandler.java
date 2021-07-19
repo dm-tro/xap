@@ -26,6 +26,9 @@ import static com.gigaspaces.jdbc.calcite.CalciteDefaults.isCalcitePropertySet;
 public class CalciteQueryHandler {
     private boolean explainPlan;
 
+    private static final String EXPLAIN_PREFIX = "explain";
+    private static final String SELECT_PREFIX = "select";
+
     public ResponsePacket handle(String query, IJSpace space, Object[] preparedValues) throws SQLException {
         Properties customProperties = space.getURL().getCustomProperties();
         GSRelNode calcitePlan = optimizeWithCalcite(query, space, customProperties);
@@ -102,6 +105,12 @@ public class CalciteQueryHandler {
         //replace rownum with row_number() if needed
         if (isCalcitePropertySet(CalciteDefaults.SUPPORT_ROWNUM, properties)) {
             query = replaceRowNum( query );
+        }
+        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_EXPLAIN_PLAN, properties)) {
+            if (query.toLowerCase().replaceAll("\\s+", "").startsWith(EXPLAIN_PREFIX + SELECT_PREFIX)) {
+                String queryAfterSelect = query.substring(query.toLowerCase().indexOf(SELECT_PREFIX) + SELECT_PREFIX.length());
+                query = "EXPLAIN PLAN FOR SELECT" + queryAfterSelect;
+            }
         }
         return query;
     }
