@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.file.Path;
 import java.rmi.RemoteException;
+import java.util.Arrays;
+import java.util.List;
 
 public class TieredStorageMachineCleaner {
         private static Logger logger = LoggerFactory.getLogger(TieredStorageMachineCleaner.class);
@@ -17,19 +19,21 @@ public class TieredStorageMachineCleaner {
         }
         Path path = SystemLocations.singleton().work("tiered-storage/" + spaceName);
         File folder = path.toFile();
-        File[] files = folder.listFiles();
-        logger.info("Is files is empty???"  + files.length);
-        if (files == null) {
+
+        List<File> files = Arrays.asList(folder.listFiles());
+        logger.info("Is files is empty???"  + files.isEmpty());
+        if (files == null  || files.isEmpty()) {
             if (logger.isDebugEnabled()){
                 logger.debug("Did not find db of space {} ", spaceName);
             }
         } else {
+            files.add(folder);
             for (final File file : files) {
                 if (!file.delete()) {
                     logger.warn("Can't remove " + file.getAbsolutePath());
                 }
             }
-            folder.delete();
+           // folder.delete();
             logger.info("Successfully deleted db of space {} in path {}", spaceName, folder.getAbsolutePath());
         }
         throw new Exception("++++++++++++++++++++++++++check");
