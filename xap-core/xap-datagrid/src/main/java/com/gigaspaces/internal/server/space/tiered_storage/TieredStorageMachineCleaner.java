@@ -18,6 +18,7 @@ public class TieredStorageMachineCleaner {
         Path path = SystemLocations.singleton().work("tiered-storage/" + spaceName);
         File folder = path.toFile();
         File[] files = folder.listFiles();
+        logger.info("Is files is empty???"  + files.length);
         if (files == null) {
             if (logger.isDebugEnabled()){
                 logger.debug("Did not find db of space {} ", spaceName);
@@ -25,7 +26,7 @@ public class TieredStorageMachineCleaner {
         } else {
             for (final File file : files) {
                 if (!file.delete()) {
-                    logger.error("Can't remove " + file.getAbsolutePath());
+                    logger.warn("Can't remove " + file.getAbsolutePath());
                 }
             }
             folder.delete();
