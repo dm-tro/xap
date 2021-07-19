@@ -301,4 +301,6 @@ public class GSSqlOperatorTable extends ReflectiveSqlOperatorTable {
                             OperandTypes.family(SqlTypeFamily.TIMESTAMP, SqlTypeFamily.STRING),
                             OperandTypes.family(SqlTypeFamily.TIME, SqlTypeFamily.STRING)),
                     SqlFunctionCategory.STRING);
+
+    public static final SqlFunction EXTRACT = new GSExtractFunction();
 }
