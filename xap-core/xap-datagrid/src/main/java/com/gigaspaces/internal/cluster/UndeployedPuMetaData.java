@@ -11,14 +11,14 @@ public class UndeployedPuMetaData {
     private String schema;
     private int numOfInstances;
     private int numOfBackups;
-    private boolean gracefulShutDown;
+    private boolean gracefulShutdown;
     
     public UndeployedPuMetaData() {
     }
 
     public UndeployedPuMetaData(String puName, String unDeployedAt, boolean isPersistent, Map<Integer,
                                 LastPrimary> lastPrimaryPerPartition, Map<String, String> spaceInstancesHosts,
-                                String schema, int numOfInstances, int numOfBackups, boolean gracefulShutDown) {
+                                String schema, int numOfInstances, int numOfBackups, boolean gracefulShutdown) {
         this.puName = puName;
         this.unDeployedAt = unDeployedAt;
         this.isPersistent = isPersistent;
@@ -27,7 +27,7 @@ public class UndeployedPuMetaData {
         this.schema = schema;
         this.numOfInstances = numOfInstances;
         this.numOfBackups = numOfBackups;
-        this.gracefulShutDown = gracefulShutDown;
+        this.gracefulShutdown = gracefulShutdown;
     }
 
     public String getPuName() {
@@ -94,12 +94,12 @@ public class UndeployedPuMetaData {
         this.numOfBackups = numOfBackups;
     }
 
-    public boolean isGracefulShutDown() {
-        return gracefulShutDown;
+    public boolean isGracefulShutdown() {
+        return gracefulShutdown;
     }
 
-    public void setGracefulShutDown(boolean gracefulShutDown) {
-        this.gracefulShutDown = gracefulShutDown;
+    public void setGracefulShutdown(boolean gracefulShutdown) {
+        this.gracefulShutdown = gracefulShutdown;
     }
 
     @Override
@@ -113,7 +113,7 @@ public class UndeployedPuMetaData {
                 ", schema='" + schema + '\'' +
                 ", numOfInstances=" + numOfInstances +
                 ", numOfBackups=" + numOfBackups +
-                ", gracefulShutDown=" + gracefulShutDown +
+                ", gracefulShutDown=" + gracefulShutdown +
                 '}';
     }
 }
