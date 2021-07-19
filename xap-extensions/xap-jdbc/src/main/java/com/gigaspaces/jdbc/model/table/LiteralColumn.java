@@ -18,7 +18,7 @@ public class LiteralColumn implements IQueryColumn{
 
     @Override
     public void setColumnOrdinal(int ordinal) {
-        throw new UnsupportedOperationException("Unsupported method setColumnOrdinal");
+        columnOrdinal = ordinal;
     }
 
     @Override
@@ -33,7 +33,7 @@ public class LiteralColumn implements IQueryColumn{
 
     @Override
     public boolean isVisible() {
-        throw new UnsupportedOperationException("Unsupported method");
+        return columnOrdinal != -1;
     }
 
     @Override
