@@ -107,10 +107,6 @@ public class SelectHandler extends RelShuttleImpl {
                     FunctionCallColumn functionCallColumn = getFunctionCallColumn(program, (RexCall) node);
                     queryExecutor.addColumn(functionCallColumn);
                 }
-//                if (node instanceof RexLiteral){
-//                    LiteralColumn literalColumn = new LiteralColumn(CalciteUtils.getValue((RexLiteral) node));
-//                    queryExecutor.addColumn(literalColumn);
-//                }
             }
         }
     }

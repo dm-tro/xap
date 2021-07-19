@@ -16,8 +16,13 @@
 
 package com.gigaspaces.query.sql.functions;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -39,6 +44,14 @@ public class ToCharSqlFunction extends SqlFunction {
      */
     @Override
     public Object apply(SqlFunctionExecutionContext context) {
+        if (context.getSession() == null) {
+            return oldToChar(context);
+        } else {
+            return dataGatewayToChar(context);
+        }
+    }
+
+    private Object oldToChar(SqlFunctionExecutionContext context){
         Object arg = context.getArgument(0);
         Object format = null;
         if (context.getNumberOfArguments() >= 2) {
@@ -60,5 +73,38 @@ public class ToCharSqlFunction extends SqlFunction {
             return arg;
         }
         throw new RuntimeException("To_Char function - wrong argument type: " + arg);
+    }
+
+    private Object dataGatewayToChar(SqlFunctionExecutionContext context) {
+        assertNumberOfArguments(2, context);
+        Object arg = context.getArgument(0);
+        Object pattern = context.getArgument(1);
+        if (!isString(pattern)) {
+            throw new RuntimeException("To_Char function - 2nd argument must be a String");
+        }
+        if (arg instanceof Number) {
+            return ToCharUtil.toChar(BigDecimal.valueOf(((Number) arg).doubleValue()), (String) pattern, "");
+        }
+        Timestamp timestamp;
+        if ((timestamp = convertToTimestamp(arg)) != null){
+            return ToCharUtil.toChar(timestamp, (String) pattern, "");
+        }
+        throw new RuntimeException(String.format("To_Char function - Object %s should be a Number or a Timestamp", arg));
+    }
+
+    private Timestamp convertToTimestamp(Object date) {
+        if (date instanceof Date) {
+            return new Timestamp(((Date) date).getTime());
+        }
+        if (date instanceof LocalDateTime) {
+            return Timestamp.valueOf((LocalDateTime) date);
+        }
+        if (date instanceof LocalDate) {
+            return Timestamp.valueOf(((LocalDate) date).atStartOfDay());
+        }
+        if (date instanceof LocalTime) {
+            return Timestamp.valueOf(LocalDateTime.of(LocalDate.now(), ((LocalTime) date)));
+        }
+        return null;
     }
 }

@@ -656,4 +656,29 @@ public abstract class StringUtils {
         if (s.equalsIgnoreCase("d")) return TimeUnit.DAYS;
         throw new IllegalArgumentException("Invalid time unit: '" + s + "'");
     }
+
+    public static String leftPad(String str, int n, char padding) {
+        if (str.length() >= n) {
+            return str;
+        }
+        StringBuilder sb = new StringBuilder();
+        while (sb.length() < n - str.length()) {
+            sb.append(padding);
+        }
+        sb.append(str);
+
+        return sb.toString();
+    }
+
+    public static String rightPad(String str, int n, char padding) {
+        if (str.length() >= n) {
+            return str;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(str);
+        while (sb.length() < n - str.length()) {
+            sb.append(padding);
+        }
+        return sb.toString();
+    }
 }

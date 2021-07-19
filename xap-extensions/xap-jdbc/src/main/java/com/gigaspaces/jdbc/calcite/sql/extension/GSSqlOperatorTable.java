@@ -65,7 +65,7 @@ public class GSSqlOperatorTable extends ReflectiveSqlOperatorTable {
             new SqlFunction(
                     "SUBSTR",
                     SqlKind.OTHER_FUNCTION,
-                    ReturnTypes.CHAR,
+                    ReturnTypes.VARCHAR_4,
                     null,
                     OperandTypes.or(
                             OperandTypes.family(SqlTypeFamily.CHARACTER, SqlTypeFamily.NUMERIC),
@@ -85,7 +85,7 @@ public class GSSqlOperatorTable extends ReflectiveSqlOperatorTable {
             new SqlFunction(
                     "SUBSTRING",
                     SqlKind.OTHER_FUNCTION,
-                    ReturnTypes.CHAR,
+                    ReturnTypes.VARCHAR_4,
                     null,
                     OperandTypes.or(
                             OperandTypes.family(SqlTypeFamily.CHARACTER, SqlTypeFamily.INTEGER),
@@ -287,4 +287,18 @@ public class GSSqlOperatorTable extends ReflectiveSqlOperatorTable {
                     null,
                     OperandTypes.NILADIC,
                     SqlFunctionCategory.SYSTEM);
+
+    public static final SqlFunction TO_CHAR =
+            new SqlFunction(
+                    "TO_CHAR",
+                    SqlKind.OTHER_FUNCTION,
+                    ReturnTypes.VARCHAR_4,
+                    null,
+                    OperandTypes.or(
+                            OperandTypes.family(SqlTypeFamily.NUMERIC, SqlTypeFamily.STRING),
+                            OperandTypes.family(SqlTypeFamily.DATETIME, SqlTypeFamily.STRING),
+                            OperandTypes.family(SqlTypeFamily.DATE, SqlTypeFamily.STRING),
+                            OperandTypes.family(SqlTypeFamily.TIMESTAMP, SqlTypeFamily.STRING),
+                            OperandTypes.family(SqlTypeFamily.TIME, SqlTypeFamily.STRING)),
+                    SqlFunctionCategory.STRING);
 }
