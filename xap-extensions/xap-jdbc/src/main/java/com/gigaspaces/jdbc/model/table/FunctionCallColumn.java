@@ -125,7 +125,11 @@ public class FunctionCallColumn implements IQueryColumn {
 
                 @Override
                 public Object getArgument(int index) {
-                    return params.get(index).getValue(entryPacket);
+                    if (entryPacket == null) {
+                        return params.get(index).getCurrentValue();
+                    } else {
+                        return params.get(index).getValue(entryPacket);
+                    }
                 }
 
                 @Override

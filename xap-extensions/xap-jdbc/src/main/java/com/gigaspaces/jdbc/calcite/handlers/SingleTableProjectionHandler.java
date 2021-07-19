@@ -80,8 +80,14 @@ public class SingleTableProjectionHandler extends RexShuttle {
             }
             else if(node.isA(SqlKind.LITERAL)){
                 RexLiteral literal = (RexLiteral) node;
+                int columnIndex = i; //from projection loop
+                LiteralColumn literalColumn = new LiteralColumn(CalciteUtils.getValue(literal), columnIndex);
+                if(isRoot) {
+                    tableContainer.getVisibleColumns().add(literalColumn);
+                } else {
+                    tableContainer.getInvisibleColumns().add(literalColumn);
+                }
             }
-
         }
     }
 
@@ -96,7 +102,8 @@ public class SingleTableProjectionHandler extends RexShuttle {
                 }
                 else if (rexNode.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) rexNode;
-                    queryColumns.add(new LiteralColumn(CalciteUtils.getValue(literal)));
+                    int columnOrdinal = ((RexLocalRef) operand).getIndex();
+                    queryColumns.add(new LiteralColumn(CalciteUtils.getValue(literal), columnOrdinal));
                 }
             }
         }

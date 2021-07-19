@@ -4,14 +4,16 @@ import com.gigaspaces.internal.transport.IEntryPacket;
 
 public class LiteralColumn implements IQueryColumn{
     private final Object value;
+    private int columnOrdinal;
 
-    public LiteralColumn(Object value) {
+    public LiteralColumn(Object value, int columnOrdinal) {
         this.value = value;
+        this.columnOrdinal = columnOrdinal;
     }
 
     @Override
     public int getColumnOrdinal() {
-        throw new UnsupportedOperationException("Unsupported method getColumnOrdinal");
+        return columnOrdinal;
     }
 
     @Override
@@ -26,22 +28,22 @@ public class LiteralColumn implements IQueryColumn{
 
     @Override
     public String getAlias() {
-        throw new UnsupportedOperationException("Unsupported method getAlias");
+        return getName();
     }
 
     @Override
     public boolean isVisible() {
-        throw new UnsupportedOperationException("Unsupported method isVisible");
+        throw new UnsupportedOperationException("Unsupported method");
     }
 
     @Override
     public boolean isUUID() {
-        throw new UnsupportedOperationException("Unsupported method isUUID");
+        throw new UnsupportedOperationException("Unsupported method");
     }
 
     @Override
     public TableContainer getTableContainer() {
-        throw new UnsupportedOperationException("Unsupported method getName");
+        throw new UnsupportedOperationException("Unsupported method");
     }
 
     @Override
@@ -56,12 +58,12 @@ public class LiteralColumn implements IQueryColumn{
 
     @Override
     public IQueryColumn create(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
-        throw new UnsupportedOperationException("Unsupported method create");
+        throw new UnsupportedOperationException("Unsupported method");
     }
 
     @Override
     public int compareTo(IQueryColumn o) {
-        throw new UnsupportedOperationException("Unsupported method compareTo");
+        return Integer.valueOf(columnOrdinal).compareTo(o.getColumnOrdinal());
     }
 
     @Override
