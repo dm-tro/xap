@@ -4,8 +4,6 @@ import com.gigaspaces.internal.query.explainplan.TextReportFormatter;
 import com.gigaspaces.internal.query.explainplan.model.JdbcExplainPlan;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.result.Cursor;
-import com.gigaspaces.jdbc.model.table.ConcreteColumn;
-import com.gigaspaces.jdbc.model.table.ConcreteTableContainer;
 import com.gigaspaces.jdbc.model.table.IQueryColumn;
 import com.gigaspaces.jdbc.model.table.OrderColumn;
 
@@ -45,6 +43,9 @@ public class JoinExplainPlan extends JdbcExplainPlan {
 
     @Override
     public void format(TextReportFormatter formatter, boolean verbose) {
+        if (!joinInfo.isEquiJoin()) {
+            throw new UnsupportedOperationException("Explain plan only supports equi join");
+        }
         JoinInfo.JoinAlgorithm joinAlgorithm = joinInfo.getRightColumn().getTableContainer().getQueryResult().getCursorType().equals(Cursor.Type.HASH) ? JoinInfo.JoinAlgorithm.Hash : JoinInfo.JoinAlgorithm.Nested;
         boolean hashJoin = joinAlgorithm.equals(JoinInfo.JoinAlgorithm.Hash);
         formatter.line(String.format("%s Join (%s)", joinInfo.getJoinType(), joinAlgorithm));

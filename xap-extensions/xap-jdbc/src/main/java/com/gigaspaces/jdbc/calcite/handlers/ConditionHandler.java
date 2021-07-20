@@ -207,7 +207,7 @@ public class ConditionHandler extends RexShuttle {
                 range = new EqualValueRange(column, false);
                 if(table.getJoinInfo() != null){
                     table.getJoinInfo().insertRangeToJoinInfo(range);
-                    return;
+                    return; //TODO: @sagiv dead code can be removed?
                 }
                 break;
             default:

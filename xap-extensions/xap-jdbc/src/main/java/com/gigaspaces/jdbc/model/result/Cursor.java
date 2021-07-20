@@ -10,4 +10,6 @@ public interface Cursor<T> {
     void reset();
 
     boolean isBeforeFirst();
+
+    void setCurrent(T current);
 }
