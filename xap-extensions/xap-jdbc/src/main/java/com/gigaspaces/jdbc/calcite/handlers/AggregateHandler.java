@@ -39,10 +39,11 @@ public class AggregateHandler {
                 groupSet.forEach(index -> {
                     String columnName = fields.get(index);
                     TableContainer table = queryExecutor.isJoinQuery() ? queryExecutor.getTableByColumnIndex(index) : queryExecutor.getTableByColumnName(columnName);
-                    if(!table.hasVisibleColumn(columnName)){
+                    final IQueryColumn queryColumn = queryExecutor.getColumnByColumnIndex(index);
+                    if(queryColumn == null){
                         table.addQueryColumn(columnName, null, true, columnCounter.getAndIncrement());
                     }
-                    IQueryColumn groupByColumn = new ConcreteColumn(columnName, null, null, true, table, columnCounter.get());
+                    IQueryColumn groupByColumn = new ConcreteColumn(queryColumn == null ? columnName : queryColumn.getName(), null, null, true, table, columnCounter.get());
                     table.addGroupByColumns(groupByColumn);
                 });
         }
