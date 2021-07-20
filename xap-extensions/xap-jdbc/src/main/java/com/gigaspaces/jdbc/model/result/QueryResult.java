@@ -78,13 +78,6 @@ public abstract class QueryResult {
             if (joinedResult.next()) {
                 return true;
             }
-            if (joinInfo.getJoinType().equals(JoinInfo.JoinType.LEFT)) {// has no match, move the cursor, save state?!
-                if (!joinInfo.getLeftJoinHasMatch()){ //couldn't find any match with the current row.
-                    joinedResult.getCursor().setCurrent(null);
-                    joinInfo.setLeftJoinNoMatch();
-                    return true;
-                }
-            }
             if (getCursor().next()) {
                 joinInfo.resetHasMatch();
                 joinedResult.reset();
@@ -130,6 +123,12 @@ public abstract class QueryResult {
 //        } else {
 //            return Cursor.Type.SCAN;
 //        }
+        if (getTableContainer() != null && getTableContainer().getJoinInfo() != null) {
+            JoinInfo joinInfo = getTableContainer().getJoinInfo();
+            if(joinInfo.joinConditionsContainsOnlyEqualAndAndOperators()) {
+                return Cursor.Type.HASH;
+            }
+        }
         return Cursor.Type.SCAN;
     }
 

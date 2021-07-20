@@ -5,6 +5,7 @@ import com.j_spaces.jdbc.Stack;
 import com.j_spaces.jdbc.builder.range.Range;
 import net.sf.jsqlparser.statement.select.Join;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.sql.SqlKind;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,11 +16,11 @@ public class JoinInfo {
     private final IQueryColumn rightColumn;
     private final JoinType joinType;
     private final List<JoinCondition> joinConditions = new ArrayList<>();
+    private final boolean isEqui;
     private Range range;
     private boolean hasMatch;
     private boolean leftJoinNoMatch;
     private boolean leftJoinHasMatch;
-    private final boolean isEqui;
 
     public JoinInfo(IQueryColumn leftColumn, IQueryColumn rightColumn, JoinType joinType) {
         this.leftColumn = leftColumn;
@@ -37,36 +38,23 @@ public class JoinInfo {
 
     public boolean checkJoinCondition() {
         if (joinType.equals(JoinType.LEFT)) {
-            if (leftJoinNoMatch) {
-                leftJoinNoMatch = false;
-                if (range != null) {
-                    boolean found = false;
-                    for (JoinCondition joinCondition : joinConditions) {
-                        if (joinCondition instanceof JoinConditionColumnValue) {
-                            IQueryColumn column = ((JoinConditionColumnValue) joinCondition).getColumn();
-                            if (range.getPath().equals(column.getName())) {
-                                hasMatch = range.getPredicate().execute(column.getCurrentValue());
-                                leftJoinHasMatch = true; //TODO: @sagiv use hasMatch?
-                                found = true;
-                                break;
-                            }
+            if (range != null) {
+                boolean found = false;
+                for (JoinCondition joinCondition : joinConditions) {
+                    if (joinCondition instanceof JoinConditionColumnValue) {
+                        IQueryColumn column = ((JoinConditionColumnValue) joinCondition).getColumn();
+                        if (range.getPath().equals(column.getName())) {
+                            hasMatch = range.getPredicate().execute(column.getCurrentValue());
+                            found = true;
+                            break;
                         }
                     }
-                    if (!found) {
-                        hasMatch = false;
-                    }
-                } else {
-                    leftJoinHasMatch = true;
-                    hasMatch = true;
                 }
-            } else {
-                hasMatch = calculateConditions();
-                if (hasMatch) {
-                    leftJoinHasMatch = true;
-                }
-                if (range != null) {
+                if (!found) {
                     hasMatch = false;
                 }
+            } else {
+                hasMatch = true;
             }
         } else if (joinType.equals(JoinType.INNER) || joinType.equals(JoinType.SEMI)) {
             hasMatch = calculateConditions();
@@ -144,6 +132,23 @@ public class JoinInfo {
 
     public boolean isEquiJoin() {
         return isEqui;
+    }
+
+    public List<JoinCondition> getJoinConditions() {
+        return joinConditions;
+    }
+
+    public boolean joinConditionsContainsOnlyEqualAndAndOperators() {
+        for (JoinCondition joinCondition : joinConditions) {
+            if (joinCondition.isOperator()) {
+                JoinConditionOperator joinConditionOperator = (JoinConditionOperator) joinCondition;
+                SqlKind sqlKind = joinConditionOperator.getSqlKind();
+                if (!sqlKind.equals(SqlKind.AND) && !sqlKind.equals(SqlKind.EQUALS)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public IQueryColumn getLeftColumn() {
