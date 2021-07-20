@@ -1,10 +1,7 @@
 package com.gigaspaces.jdbc.calcite;
 
 import com.gigaspaces.jdbc.QueryExecutor;
-import com.gigaspaces.jdbc.calcite.handlers.AggregateHandler;
-import com.gigaspaces.jdbc.calcite.handlers.CaseConditionHandler;
-import com.gigaspaces.jdbc.calcite.handlers.ConditionHandler;
-import com.gigaspaces.jdbc.calcite.handlers.SingleTableProjectionHandler;
+import com.gigaspaces.jdbc.calcite.handlers.*;
 import com.gigaspaces.jdbc.calcite.pg.PgCalciteTable;
 import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
@@ -188,20 +185,12 @@ public class SelectHandler extends RelShuttleImpl {
 
     private void handleJoin(GSJoin join) {
         RexCall rexCall = (RexCall) join.getCondition();
-        if(rexCall.getKind() != SqlKind.EQUALS){
-            throw new UnsupportedOperationException("Only equal joins are supported");
-        }
-        int leftIndex = ((RexInputRef) rexCall.getOperands().get(0)).getIndex();
-        int rightIndex = ((RexInputRef) rexCall.getOperands().get(1)).getIndex();
-        TableContainer rightContainer = queryExecutor.getTableByColumnIndex(rightIndex);
-        TableContainer leftContainer = queryExecutor.getTableByColumnIndex(leftIndex);
-        IQueryColumn rightColumn = queryExecutor.getColumnByColumnIndex(rightIndex);
-        IQueryColumn leftColumn = queryExecutor.getColumnByColumnIndex(leftIndex);
-        rightContainer.setJoinInfo(new JoinInfo(leftColumn, rightColumn, JoinInfo.JoinType.getType(join.getJoinType())));
-        if (leftContainer.getJoinedTable() == null) {
-            if (!rightContainer.isJoined()) {
-                leftContainer.setJoinedTable(rightContainer);
-                rightContainer.setJoined(true);
+        JoinConditionHandler joinConditionHandler = new JoinConditionHandler(join, queryExecutor);
+        TableContainer leftContainer = joinConditionHandler.handleRexCall(rexCall);
+        if (leftContainer.getJoinedTable() != null && leftContainer.getJoinedTable().getJoinInfo() != null) {
+            JoinInfo joinInfo = leftContainer.getJoinedTable().getJoinInfo();
+            if (joinInfo.getJoinType().equals(JoinInfo.JoinType.LEFT) && !joinInfo.joinConditionsContainsOnlyEqualAndAndOperators()) {
+                throw new UnsupportedOperationException("LEFT join only supports AND and EQUALS operators in ON condition");
             }
         }
         if(!childToCalc.containsKey(join)) { // it is SELECT *
@@ -215,8 +204,7 @@ public class SelectHandler extends RelShuttleImpl {
                     }
                 }
             }
-        }
-        else{
+        } else {
             handleCalcFromJoin(childToCalc.get(join));
             childToCalc.remove(join); // visited, not needed anymore
         }

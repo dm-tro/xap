@@ -3,7 +3,9 @@ package com.gigaspaces.jdbc.jsql.handlers;
 import com.gigaspaces.jdbc.JoinQueryExecutor;
 import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.exceptions.SQLExceptionWrapper;
+import com.gigaspaces.jdbc.model.join.ColumnValueJoinCondition;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
+import com.gigaspaces.jdbc.model.join.OperatorJoinCondition;
 import com.gigaspaces.jdbc.model.result.QueryResult;
 import com.gigaspaces.jdbc.model.table.ConcreteTableContainer;
 import com.gigaspaces.jdbc.model.table.IQueryColumn;
@@ -15,6 +17,7 @@ import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.*;
+import org.apache.calcite.sql.SqlKind;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -59,7 +62,11 @@ public class SelectHandler extends SelectVisitorAdapter implements FromItemVisit
             TableContainer leftTable = QueryColumnHandler.getTableForColumn(lColumn, tables);
             IQueryColumn rightColumn = rightTable.addQueryColumn(rColumn.getColumnName(), null, false, -1);
             IQueryColumn leftColumn = leftTable.addQueryColumn(lColumn.getColumnName(), null, false, -1);
-            rightTable.setJoinInfo(new JoinInfo(leftColumn, rightColumn, JoinInfo.JoinType.getType(join)));
+            JoinInfo joinInfo = new JoinInfo(JoinInfo.JoinType.getType(join), true);
+            joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(SqlKind.EQUALS, 2));
+            joinInfo.addJoinCondition(new ColumnValueJoinCondition(rightColumn));
+            joinInfo.addJoinCondition(new ColumnValueJoinCondition(leftColumn));
+            rightTable.setJoinInfo(joinInfo);
             if (leftTable.getJoinedTable() == null) { // TODO set right table every time and align it to recursive form in JoinTablesIterator
                 if (!rightTable.isJoined()) {
                     leftTable.setJoinedTable(rightTable);
