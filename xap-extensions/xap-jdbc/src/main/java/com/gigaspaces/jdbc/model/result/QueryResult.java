@@ -118,14 +118,10 @@ public abstract class QueryResult {
     }
 
     public Cursor.Type getCursorType() {
-//        if (getTableContainer() != null && getTableContainer().getJoinInfo() != null) {
-//            return Cursor.Type.HASH;
-//        } else {
-//            return Cursor.Type.SCAN;
-//        }
+
         if (getTableContainer() != null && getTableContainer().getJoinInfo() != null) {
             JoinInfo joinInfo = getTableContainer().getJoinInfo();
-            if(joinInfo.joinConditionsContainsOnlyEqualAndAndOperators()) {
+            if(joinInfo.joinConditionsContainsOnlyEqualAndAndOperators() || joinInfo.isEquiJoin()) {
                 return Cursor.Type.HASH;
             }
         }

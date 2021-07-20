@@ -19,8 +19,6 @@ public class JoinInfo {
     private final boolean isEqui;
     private Range range;
     private boolean hasMatch;
-    private boolean leftJoinNoMatch;
-    private boolean leftJoinHasMatch;
 
     public JoinInfo(IQueryColumn leftColumn, IQueryColumn rightColumn, JoinType joinType) {
         this.leftColumn = leftColumn;
@@ -119,15 +117,6 @@ public class JoinInfo {
 
     public void resetHasMatch() {
         this.hasMatch = false;
-        this.leftJoinHasMatch = false;
-    }
-
-    public void setLeftJoinNoMatch() {
-        this.leftJoinNoMatch = true;
-    }
-
-    public boolean getLeftJoinHasMatch() {
-        return this.leftJoinHasMatch;
     }
 
     public boolean isEquiJoin() {
