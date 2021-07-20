@@ -12,24 +12,13 @@ import java.util.List;
 
 public class JoinInfo {
 
-    private final IQueryColumn leftColumn;
-    private final IQueryColumn rightColumn;
     private final JoinType joinType;
     private final List<JoinCondition> joinConditions = new ArrayList<>();
     private final boolean isEqui;
     private Range range;
     private boolean hasMatch;
 
-    public JoinInfo(IQueryColumn leftColumn, IQueryColumn rightColumn, JoinType joinType) {
-        this.leftColumn = leftColumn;
-        this.rightColumn = rightColumn;
-        this.joinType = joinType;
-        this.isEqui = true;
-    }
-
     public JoinInfo(JoinType joinType, boolean isEqui) {
-        this.leftColumn = null;
-        this.rightColumn = null;
         this.joinType = joinType;
         this.isEqui = isEqui;
     }
@@ -144,14 +133,14 @@ public class JoinInfo {
         if (isEqui) {
             return ((JoinConditionColumnValue) this.joinConditions.get(2)).getColumn();
         }
-        return leftColumn;
+        return null;
     }
 
     public IQueryColumn getRightColumn() {
         if (isEqui) {
             return ((JoinConditionColumnValue) this.joinConditions.get(1)).getColumn();
         }
-        return rightColumn;
+        return null;
     }
 
     public JoinType getJoinType() {
