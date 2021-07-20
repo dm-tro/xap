@@ -177,6 +177,13 @@ public class SelectHandler extends RelShuttleImpl {
                 queryExecutor.addColumn(qc);
             }
         }
+        if (program.getCondition() != null) {
+            ConditionHandler conditionHandler = new ConditionHandler(program, queryExecutor, program.getInputRowType().getFieldNames());
+            program.getCondition().accept(conditionHandler);
+            for (Map.Entry<TableContainer, QueryTemplatePacket> tableContainerQueryTemplatePacketEntry : conditionHandler.getQTPMap().entrySet()) {
+                tableContainerQueryTemplatePacketEntry.getKey().setQueryTemplatePacket(tableContainerQueryTemplatePacketEntry.getValue());
+            }
+        }
     }
 
     private void handleJoin(GSJoin join) {

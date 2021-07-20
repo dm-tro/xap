@@ -1,6 +1,7 @@
 package com.gigaspaces.jdbc;
 
 import com.gigaspaces.jdbc.exceptions.ColumnNotFoundException;
+import com.gigaspaces.jdbc.explainplan.SubqueryExplainPlan;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
 import com.gigaspaces.jdbc.model.result.*;
 import com.gigaspaces.jdbc.model.table.*;
@@ -23,7 +24,7 @@ public class QueryExecutor {
     private final LinkedList<Integer> fieldCountList = new LinkedList<>();
     private final List<CaseColumn> caseColumns = new ArrayList<>();
     private int columnCounter = 0;
-    private final List<ConcreteColumn> groupByColumns = new ArrayList<>();
+    private final List<IQueryColumn> groupByColumns = new ArrayList<>();
 
 
     public QueryExecutor(IJSpace space, QueryExecutionConfig config, Object[] preparedValues) {
@@ -57,8 +58,18 @@ public class QueryExecutor {
             queryResult.addCaseColumnsToResults(caseColumns);
             final List<IQueryColumn> selectedColumns = getSelectedColumns();
             if(!selectedColumns.isEmpty() && config.isCalcite()){
-                List<TableRow> rows = queryResult.getRows().stream().map(row -> TableRowFactory.createProjectedTableRow(row, this)).collect(Collectors.toList());
-                return new ConcreteQueryResult(selectedColumns, rows);
+                if (config.isExplainPlan()) {
+                    ExplainPlanQueryResult explainResult = ((ExplainPlanQueryResult) queryResult);
+                    SubqueryExplainPlan subquery = new SubqueryExplainPlan(getSelectedColumns(),
+                            config.getTempTableNameGenerator().generate(),
+                            explainResult.getExplainPlanInfo(), null, Collections.unmodifiableList(getOrderColumns()),
+                            Collections.unmodifiableList(getGroupByColumns()), false);
+                    return new ExplainPlanQueryResult(getSelectedColumns(), subquery, singleTable);
+                }
+                else{
+                    List<TableRow> rows = queryResult.getRows().stream().map(row -> TableRowFactory.createProjectedTableRow(row, this)).collect(Collectors.toList());
+                    return new ConcreteQueryResult(selectedColumns, rows);
+                }
             }
             return queryResult;
         }
@@ -156,7 +167,7 @@ public class QueryExecutor {
                 return getTables().get(i).getVisibleColumns().get(columnIndex);
             }
         }
-        throw new UnsupportedOperationException("");
+        return null;
     }
 
     private void initFieldCount(){
@@ -212,11 +223,11 @@ public class QueryExecutor {
         return result;
     }
 
-    public List<ConcreteColumn> getGroupByColumns() {
+    public List<IQueryColumn> getGroupByColumns() {
         return this.groupByColumns;
     }
 
-    public void addGroupByColumn(ConcreteColumn groupByColumn){
+    public void addGroupByColumn(IQueryColumn groupByColumn){
         this.groupByColumns.add(groupByColumn);
     }
 }
