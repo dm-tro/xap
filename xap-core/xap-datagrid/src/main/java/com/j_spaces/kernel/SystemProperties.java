@@ -503,7 +503,7 @@ public class SystemProperties extends CommonSystemProperties {
     public final static String JDBC_V3_DRIVER_CALCITE = "calcite";
 
 
-    public final static String ENABLE_INTERNAL_API = "com.gs.enable.internal.api";
+    public final static String EXPOSE_INTERNAL_API = "com.gs.expose.internal.api";
 
     /**
      * System variable for enabling recording of all metrics tables to hsqldb
