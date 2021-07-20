@@ -145,7 +145,6 @@ public abstract class QueryResult {
             int column = 0;
             for (int i = 0; i < columns; i++) {
                 fieldValues[row][column++] = entry.getPropertyValue(getSelectedColumns().get(i));
-                //TODO: @sagiv, not good column with same name !
             }
 
             row++;
