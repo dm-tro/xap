@@ -141,10 +141,16 @@ public class JoinInfo {
     }
 
     public IQueryColumn getLeftColumn() {
+        if (isEqui) {
+            return ((JoinConditionColumnValue) this.joinConditions.get(2)).getColumn();
+        }
         return leftColumn;
     }
 
     public IQueryColumn getRightColumn() {
+        if (isEqui) {
+            return ((JoinConditionColumnValue) this.joinConditions.get(1)).getColumn();
+        }
         return rightColumn;
     }
 

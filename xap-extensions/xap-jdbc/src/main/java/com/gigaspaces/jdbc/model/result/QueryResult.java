@@ -118,7 +118,6 @@ public abstract class QueryResult {
     }
 
     public Cursor.Type getCursorType() {
-
         if (getTableContainer() != null && getTableContainer().getJoinInfo() != null) {
             JoinInfo joinInfo = getTableContainer().getJoinInfo();
             if(joinInfo.joinConditionsContainsOnlyEqualAndAndOperators() || joinInfo.isEquiJoin()) {

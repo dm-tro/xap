@@ -7,6 +7,7 @@ import com.gigaspaces.jdbc.calcite.handlers.JoinConditionHandler;
 import com.gigaspaces.jdbc.calcite.handlers.SingleTableProjectionHandler;
 import com.gigaspaces.jdbc.calcite.pg.PgCalciteTable;
 import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
+import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.table.*;
 import com.gigaspaces.query.sql.functions.extended.LocalSession;
 import com.j_spaces.jdbc.builder.QueryTemplatePacket;
@@ -184,6 +185,12 @@ public class SelectHandler extends RelShuttleImpl {
         RexCall rexCall = (RexCall) join.getCondition();
         JoinConditionHandler joinConditionHandler = new JoinConditionHandler(join, queryExecutor);
         TableContainer leftContainer = joinConditionHandler.handleRexCall(rexCall);
+        if (leftContainer.getJoinedTable() != null && leftContainer.getJoinedTable().getJoinInfo() != null) {
+            JoinInfo joinInfo = leftContainer.getJoinedTable().getJoinInfo();
+            if (joinInfo.getJoinType().equals(JoinInfo.JoinType.LEFT) && !joinInfo.joinConditionsContainsOnlyEqualAndAndOperators()) {
+                throw new UnsupportedOperationException("LEFT join only supports AND and EQUALS operators in ON condition");
+            }
+        }
         if(!childToCalc.containsKey(join)) { // it is SELECT *
             if(join.equals(root)
                     || ((root instanceof GSSort) && ((GSSort) root).getInput().equals(join))) { // root is GSSort and its child is join

@@ -77,7 +77,7 @@ public class JoinConditionHandler {
                 IQueryColumn column = table.addQueryColumn(columnName, null, false, -1);
                 joinInfo.addJoinCondition(JoinConditionOperator.getConditionOperator(rexCall.getKind(), 1));
                 joinInfo.addJoinCondition(new JoinConditionColumnValue(column));
-                break;
+                return table; //TODO: @sagiv not good!. not the left always
             case NOT:
                 joinInfo.addJoinCondition(JoinConditionOperator.getConditionOperator(rexCall.getKind(), 1));
                 return handleSingleJoinCondition(join, (RexCall) rexCall.getOperands().get(0));
@@ -165,13 +165,12 @@ public class JoinConditionHandler {
                 joinInfo.addJoinCondition(JoinConditionOperator.getConditionOperator(rexCall.getKind(), 2));
                 joinInfo.addJoinCondition(new JoinConditionColumnValue(column));
                 joinInfo.addJoinCondition(new JoinConditionColumnValue(new LiteralColumn(literalValue)));
-                return table; //TODO: @ not good!. not the left always
+                return table; //TODO: @sagiv not good!. not the left always
             case OR:
             case AND:
                 return handleRexCall(rexCall);
             default:
                 throw new UnsupportedOperationException("Join condition type [" + rexCall.getKind() + "] is not supported");
         }
-        return null;
     }
 }

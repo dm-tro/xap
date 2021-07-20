@@ -18,6 +18,9 @@ public class HashedRowCursor implements Cursor<TableRow>{
     public HashedRowCursor(JoinInfo joinInfo, List<TableRow> rows) {
         this.joinInfo = joinInfo;
         init(rows);
+        if (joinInfo.getJoinType().equals(JoinInfo.JoinType.LEFT) && !joinInfo.joinConditionsContainsOnlyEqualAndAndOperators()) {
+            throw new UnsupportedOperationException("LEFT join only supports AND and EQUALS operators in ON condition");
+        }
     }
 
     private void init(List<TableRow> rows) { // assuming joinConditions contains only AND / EQUALS operators.
@@ -27,16 +30,13 @@ public class HashedRowCursor implements Cursor<TableRow>{
         JoinCondition joinCondition;
         while (index < size) {
             joinCondition = joinInfo.getJoinConditions().get(index);
-            if (joinCondition.isOperator()) {
-                index++;
-            }
-            else {
+            if (!joinCondition.isOperator()) {
                 joinRightColumns.add(((JoinConditionColumnValue) joinCondition).getColumn());
                 index++;
                 joinCondition = joinInfo.getJoinConditions().get(index);
                 joinLeftColumns.add(((JoinConditionColumnValue) joinCondition).getColumn());
-                index++;
             }
+            index++;
         }
 
         for (TableRow row : rows) {
