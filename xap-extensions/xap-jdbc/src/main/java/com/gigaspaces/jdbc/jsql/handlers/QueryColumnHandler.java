@@ -81,7 +81,7 @@ public class QueryColumnHandler extends SelectItemVisitorAdapter {
                     throw new IllegalArgumentException("Ambiguous column name [" + columnName + "]");
                 }
             }
-            IQueryColumn qc = table.addQueryColumn(columnName, null, true, columnCounter++);
+            IQueryColumn qc = table.addQueryColumnWithColumnOrdinal(columnName, null, true, columnCounter++);
             this.queryExecutor.addColumn(qc);
         });
     }
@@ -102,7 +102,7 @@ public class QueryColumnHandler extends SelectItemVisitorAdapter {
                     this.columns.add(column);
                     this.tableContainers.add(table);
                 } else {
-                    IQueryColumn qc = table.addQueryColumn(column.getColumnName(), this.alias, true, columnCounter++);
+                    IQueryColumn qc = table.addQueryColumnWithColumnOrdinal(column.getColumnName(), this.alias, true, columnCounter++);
                     queryExecutor.addColumn(qc);
                 }
             }
@@ -124,8 +124,8 @@ public class QueryColumnHandler extends SelectItemVisitorAdapter {
                 }
                 AggregationColumn aggregationColumn;
                 if (getTableContainer() != null) {  // assume we have only one table because of the checks above.
-                    IQueryColumn qc = getTableContainer().addQueryColumn(getColumnName(function.isAllColumns()),
-                            getColumnAlias(), false, -1);
+                    IQueryColumn qc = getTableContainer().addQueryColumnWithoutOrdinal(
+                            getColumnName(function.isAllColumns()), getColumnAlias(), false);
                     aggregationColumn = new AggregationColumn(aggregationFunctionType, getFunctionAlias(function), qc, true,
                             function.isAllColumns(), columnCounter++);
                     getTableContainer().addAggregationColumn(aggregationColumn);
@@ -172,7 +172,7 @@ public class QueryColumnHandler extends SelectItemVisitorAdapter {
 
             private void addAllTableColumn(TableContainer table) {
                 table.getAllColumnNames().forEach(columnName -> {
-                    IQueryColumn qc = table.addQueryColumn(columnName, null, false, -1);
+                    IQueryColumn qc = table.addQueryColumnWithoutOrdinal(columnName, null, false);
                     queryExecutor.addColumn(qc);
                 });
             }

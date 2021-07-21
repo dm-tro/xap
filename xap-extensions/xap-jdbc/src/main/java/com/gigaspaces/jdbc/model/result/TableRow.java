@@ -159,7 +159,7 @@ public class TableRow implements Comparable<TableRow> {
         this.columns = queryExecutor.getSelectedColumns().toArray(new IQueryColumn[0]);
         this.values = new Object[this.columns.length];
         for (int i = 0; i < this.columns.length; i++) {
-            this.values[i] = row.getPropertyValue(this.columns[i].getName());
+            this.values[i] = row.getPropertyValue(this.columns[i].getAlias());
         }
 
         this.orderColumns = queryExecutor.getOrderColumns().toArray(new OrderColumn[0]);

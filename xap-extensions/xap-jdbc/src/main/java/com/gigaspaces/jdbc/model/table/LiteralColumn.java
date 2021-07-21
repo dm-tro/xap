@@ -6,21 +6,18 @@ public class LiteralColumn implements IQueryColumn{
     private final Object value;
     private int columnOrdinal;
     private final String alias;
+    private final boolean isVisible;
 
-    public LiteralColumn(Object value, int columnOrdinal, String alias) {
+    public LiteralColumn(Object value, int columnOrdinal, String alias, boolean isVisible) {
         this.value = value;
         this.columnOrdinal = columnOrdinal;
         this.alias = alias;
+        this.isVisible = isVisible;
     }
 
     @Override
     public int getColumnOrdinal() {
         return columnOrdinal;
-    }
-
-    @Override
-    public void setColumnOrdinal(int ordinal) {
-        columnOrdinal = ordinal;
     }
 
     @Override
@@ -35,7 +32,7 @@ public class LiteralColumn implements IQueryColumn{
 
     @Override
     public boolean isVisible() {
-        return columnOrdinal != -1;
+        return isVisible;
     }
 
     @Override

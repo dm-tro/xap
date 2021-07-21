@@ -1,5 +1,6 @@
 package com.gigaspaces.jdbc.model.table;
 
+import com.gigaspaces.jdbc.calcite.CalciteDefaults;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.result.QueryResult;
@@ -15,6 +16,7 @@ import java.util.stream.Stream;
 import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
 
 public abstract class TableContainer {
+    private final List<IQueryColumn> projectedColumns = new ArrayList<>();
     private final List<OrderColumn> orderColumns = new ArrayList<>();
     private final List<AggregationColumn> aggregationColumns = new ArrayList<>();
     private final List<IQueryColumn> groupByColumns = new ArrayList<>();
@@ -23,16 +25,27 @@ public abstract class TableContainer {
     private Expression exprTree;
     private boolean allColumns = true;
 
+    public void addProjectedColumn(IQueryColumn column) {
+        if(!column.isVisible()) {
+            throw new IllegalStateException("Projected column must be visible");
+        }
+        this.projectedColumns.add(column);
+    }
+
+    public List<IQueryColumn> getProjectedColumns() {
+        return projectedColumns;
+    }
+
     public abstract QueryResult executeRead(QueryExecutionConfig config) throws SQLException;
 
-    public abstract IQueryColumn addQueryColumn(String columnName, String columnAlias, boolean isVisible, int columnOrdinal);
+    public abstract IQueryColumn addQueryColumnWithColumnOrdinal(String columnName, String columnAlias, boolean isVisible, int columnOrdinal);
 
     public abstract List<IQueryColumn> getVisibleColumns();
 
     public abstract Set<IQueryColumn> getInvisibleColumns();
 
     public IQueryColumn addQueryColumnWithoutOrdinal(String columnName, String columnAlias, boolean isVisible){
-        return addQueryColumn(columnName, columnAlias, isVisible, EMPTY_ORDINAL);
+        return addQueryColumnWithColumnOrdinal(columnName, columnAlias, isVisible, EMPTY_ORDINAL);
     }
 
     public List<IQueryColumn> getAllQueryColumns() {
@@ -40,8 +53,10 @@ public abstract class TableContainer {
     }
 
     public List<IQueryColumn> getSelectedColumns() {
-        return Stream.concat(getVisibleColumns().stream(), getAggregationColumns().stream())
-                .sorted().collect(Collectors.toList());
+        if (CalciteDefaults.isCalciteDriverPropertySet()) {
+            return getProjectedColumns();
+        }
+        return Stream.concat(getVisibleColumns().stream(), getAggregationColumns().stream()).sorted().collect(Collectors.toList());
     }
 
     public abstract List<String> getAllColumnNames();
@@ -150,7 +165,8 @@ public abstract class TableContainer {
         List<String> columns = getAllColumnNames();
         for (int i = 0; i < columns.size(); i++) {
             String column = columns.get(i);
-            addQueryColumn(column, null, true, i);
+            IQueryColumn queryColumn = addQueryColumnWithoutOrdinal(column, null, true);
+            addProjectedColumn(queryColumn);
         }
     }
 
