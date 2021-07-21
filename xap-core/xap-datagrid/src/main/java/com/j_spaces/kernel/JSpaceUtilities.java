@@ -23,6 +23,7 @@ import com.gigaspaces.internal.io.XmlUtils;
 import com.gigaspaces.internal.jvm.JVMDetails;
 import com.gigaspaces.internal.jvm.JVMInfoProvider;
 import com.gigaspaces.internal.utils.CollectionUtils;
+import com.gigaspaces.internal.utils.GsEnv;
 import com.gigaspaces.internal.utils.xslt.XSLTConverter;
 import com.gigaspaces.lrmi.nio.info.NIODetails;
 import com.gigaspaces.lrmi.nio.info.NIOInfoProvider;
@@ -1572,5 +1573,10 @@ public class JSpaceUtilities {
         }
 
         return hasAllElementsAsNulls;
+    }
+
+    public static boolean isJdbcDriverV3Enabled(){
+        String jdbcDriver = GsEnv.property(SystemProperties.JDBC_DRIVER).get( SystemProperties.JDBC_V3_DRIVER );
+        return jdbcDriver.equals(SystemProperties.JDBC_V3_DRIVER) || jdbcDriver.equals(SystemProperties.JDBC_V3_DRIVER_JSQL);
     }
 }
