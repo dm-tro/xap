@@ -3,12 +3,15 @@ package com.gigaspaces.jdbc.model.table;
 import com.gigaspaces.jdbc.calcite.pg.PgCalciteTable;
 import com.gigaspaces.jdbc.exceptions.ColumnNotFoundException;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
-import com.gigaspaces.jdbc.model.result.*;
+import com.gigaspaces.jdbc.model.result.QueryResult;
+import com.gigaspaces.jdbc.model.result.TempQueryResult;
 import com.j_spaces.core.IJSpace;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
 import java.util.stream.Collectors;
+
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
 
 public class SchemaTableContainer extends TempTableContainer {
     private final PgCalciteTable table;
@@ -17,7 +20,7 @@ public class SchemaTableContainer extends TempTableContainer {
     public SchemaTableContainer(PgCalciteTable table, String alias, IJSpace space) {
         super(alias);
         this.table = table;
-        this.tableColumns.addAll(Arrays.stream(table.getSchemas()).map(x -> new ConcreteColumn(x.getPropertyName(), x.getJavaType(), null, true, this, -1)).collect(Collectors.toList()));
+        this.tableColumns.addAll(Arrays.stream(table.getSchemas()).map(x -> new ConcreteColumn(x.getPropertyName(), x.getJavaType(), null, true, this, EMPTY_ORDINAL)).collect(Collectors.toList()));
         this.space = space;
 
         allColumnNamesSorted.addAll(tableColumns.stream().map(IQueryColumn::getAlias).collect(Collectors.toList()));
@@ -34,7 +37,7 @@ public class SchemaTableContainer extends TempTableContainer {
     }
 
     @Override
-    public IQueryColumn addQueryColumn(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
+    public IQueryColumn addQueryColumnWithColumnOrdinal(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
         IQueryColumn queryColumn = tableColumns.stream()
                 .filter(qc -> qc.getName().equalsIgnoreCase(columnName))
                 .findFirst()

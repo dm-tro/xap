@@ -96,6 +96,10 @@ public class ConcreteTableContainer extends TableContainer {
             if (explainPlanImpl != null) {
                 queryResult = new ExplainPlanQueryResult(visibleColumns, explainPlanImpl.getExplainPlanInfo(), this);
             } else {
+                if(hasGroupByColumns() && !hasAggregationFunctions() && getGroupByColumns().size() != getProjectedColumns().size()){
+                    getProjectedColumns().clear();
+                    getProjectedColumns().addAll(getGroupByColumns());
+                }
                 queryResult = new ConcreteQueryResult(res, this);
                 if( hasGroupByColumns() && hasOrderColumns() ){
                     queryResult.sort();
@@ -251,7 +255,7 @@ public class ConcreteTableContainer extends TableContainer {
     }
 
     @Override
-    public IQueryColumn addQueryColumn(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
+    public IQueryColumn addQueryColumnWithColumnOrdinal(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
         final boolean isUidColumn = columnName.equalsIgnoreCase(IQueryColumn.UUID_COLUMN);
         if (!isUidColumn && typeDesc.getFixedPropertyPositionIgnoreCase(columnName) == -1) {
             throw new ColumnNotFoundException("Could not find column with name [" + columnName + "]");

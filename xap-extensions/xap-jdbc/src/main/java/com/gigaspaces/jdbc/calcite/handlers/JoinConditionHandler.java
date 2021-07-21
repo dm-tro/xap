@@ -19,6 +19,8 @@ import org.apache.calcite.sql.SqlKind;
 
 import java.sql.SQLException;
 
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
+
 public class JoinConditionHandler {
     private final GSJoin join;
     private final QueryExecutor queryExecutor;
@@ -96,7 +98,6 @@ public class JoinConditionHandler {
                     int secondOperandIndex = ((RexInputRef) rexCall.getOperands().get(1)).getIndex();
                     int leftIndex;
                     int rightIndex;
-                    int diff = join.getLeft().getRowType().getFieldCount();
                     if (firstOperandIndex < secondOperandIndex) {
                         leftIndex = firstOperandIndex;
                         rightIndex = secondOperandIndex;
@@ -104,8 +105,6 @@ public class JoinConditionHandler {
                         leftIndex = secondOperandIndex;
                         rightIndex = firstOperandIndex;
                     }
-                    String lColumn = join.getLeft().getRowType().getFieldNames().get(leftIndex);
-                    String rColumn = join.getRight().getRowType().getFieldNames().get(rightIndex - diff);
                     TableContainer rightContainer = queryExecutor.getTableByColumnIndex(rightIndex);
                     TableContainer leftContainer = queryExecutor.getTableByColumnIndex(leftIndex);
                     IQueryColumn rightColumn = queryExecutor.getColumnByColumnIndex(rightIndex);
@@ -166,7 +165,7 @@ public class JoinConditionHandler {
                 }
                 joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(rexCall.getKind(), 2));
                 joinInfo.addJoinCondition(new ColumnValueJoinCondition(column));
-                joinInfo.addJoinCondition(new ColumnValueJoinCondition(new LiteralColumn(literalValue, -1, null)));
+                joinInfo.addJoinCondition(new ColumnValueJoinCondition(new LiteralColumn(literalValue, EMPTY_ORDINAL, null, false)));
                 return table; //TODO: @sagiv not good!. not the left always
             }
             case OR:

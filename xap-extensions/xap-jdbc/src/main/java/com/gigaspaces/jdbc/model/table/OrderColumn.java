@@ -28,11 +28,6 @@ public class OrderColumn implements IQueryColumn {
     }
 
     @Override
-    public void setColumnOrdinal(int ordinal) {
-        this.queryColumn.setColumnOrdinal(ordinal);
-    }
-
-    @Override
     public String getName() {
         return this.queryColumn.getName();
     }

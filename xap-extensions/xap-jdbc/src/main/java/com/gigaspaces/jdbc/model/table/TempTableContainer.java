@@ -4,7 +4,6 @@ import com.gigaspaces.internal.utils.ObjectConverter;
 import com.gigaspaces.jdbc.exceptions.ColumnNotFoundException;
 import com.gigaspaces.jdbc.explainplan.SubqueryExplainPlan;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
-import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.result.*;
 import com.j_spaces.jdbc.builder.QueryTemplatePacket;
 import com.j_spaces.jdbc.builder.range.*;
@@ -81,7 +80,7 @@ public class TempTableContainer extends TableContainer {
     }
 
     @Override
-    public IQueryColumn addQueryColumn(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
+    public IQueryColumn addQueryColumnWithColumnOrdinal(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
         String columnNameOrAlias = columnAlias == null ? columnName : columnAlias;
         IQueryColumn queryColumn = tableColumns.stream() //TODO: @sagiv change to set?
                 .filter(qc -> qc.getAlias().equalsIgnoreCase(columnNameOrAlias))

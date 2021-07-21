@@ -9,8 +9,6 @@ public interface IQueryColumn extends Comparable<IQueryColumn> {
 
     int getColumnOrdinal();
 
-    void setColumnOrdinal(int ordinal);
-
     String getName();
 
     String getAlias();
@@ -28,4 +26,8 @@ public interface IQueryColumn extends Comparable<IQueryColumn> {
     IQueryColumn create(String columnName, String columnAlias, boolean isVisible, int columnOrdinal);
 
     Object getValue(IEntryPacket entryPacket);
+
+    default boolean isAggregate(){
+        return false;
+    }
 }
