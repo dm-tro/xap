@@ -5,10 +5,12 @@ import com.gigaspaces.internal.transport.IEntryPacket;
 public class LiteralColumn implements IQueryColumn{
     private final Object value;
     private int columnOrdinal;
+    private final String alias;
 
-    public LiteralColumn(Object value, int columnOrdinal) {
+    public LiteralColumn(Object value, int columnOrdinal, String alias) {
         this.value = value;
         this.columnOrdinal = columnOrdinal;
+        this.alias = alias;
     }
 
     @Override
@@ -23,7 +25,7 @@ public class LiteralColumn implements IQueryColumn{
 
     @Override
     public String getName() {
-        return "\'" + value + "\'";
+        return (alias == null) ? "\'" + value + "\'" : alias;
     }
 
     @Override
@@ -63,11 +65,16 @@ public class LiteralColumn implements IQueryColumn{
 
     @Override
     public int compareTo(IQueryColumn o) {
-        return Integer.valueOf(columnOrdinal).compareTo(o.getColumnOrdinal());
+        return Integer.compare(columnOrdinal, o.getColumnOrdinal());
     }
 
     @Override
     public Object getValue(IEntryPacket entryPacket) {
         return value;
+    }
+
+    @Override
+    public String toString() {
+        return getAlias();
     }
 }

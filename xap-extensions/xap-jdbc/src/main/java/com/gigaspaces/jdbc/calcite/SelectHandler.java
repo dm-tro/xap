@@ -119,8 +119,7 @@ public class SelectHandler extends RelShuttleImpl {
                 RexNode funcArgument = program.getExprList().get(((RexLocalRef) operand).getIndex());
                 if (funcArgument.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) funcArgument;
-                    int columnOrdinal = ((RexLocalRef) operand).getIndex();
-                    params.add(new LiteralColumn(CalciteUtils.getValue(literal, castType), columnOrdinal));
+                    params.add(new LiteralColumn(CalciteUtils.getValue(literal, castType), -1, null));
                 } else if (funcArgument instanceof RexCall) { //operator
                     RexCall function= (RexCall) funcArgument;
                     params.add(getFunctionCallColumn(program, function));
@@ -251,15 +250,14 @@ public class SelectHandler extends RelShuttleImpl {
                         RexCall call = (RexCall) node;
                         SqlFunction sqlFunction = (SqlFunction) call.op;
                         List<IQueryColumn> queryColumns = new ArrayList<>();
-                        addQueryColumns(call, queryColumns, program, inputFields);
-                        FunctionCallColumn functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, true, -1);
+                        addQueryColumns(call, queryColumns, program, inputFields, outputFields, i);
+                        FunctionCallColumn functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), outputFields.get(i), true, i);
                         queryExecutor.addColumn(functionCallColumn);
                         break;
                     }
                     case LITERAL: {
                         RexLiteral literal = (RexLiteral) node;
-                        int columnOrdinal = localRef.getIndex();
-                        queryExecutor.addColumn(new LiteralColumn(CalciteUtils.getValue(literal), columnOrdinal));
+                        queryExecutor.addColumn(new LiteralColumn(CalciteUtils.getValue(literal), i, outputFields.get(i)));
                         break;
                     }
                     default:
@@ -277,7 +275,7 @@ public class SelectHandler extends RelShuttleImpl {
         }
     }
 
-    private void addQueryColumns(RexCall call, List<IQueryColumn> queryColumns, RexProgram program, List<String> inputFields) {
+    private void addQueryColumns(RexCall call, List<IQueryColumn> queryColumns, RexProgram program, List<String> inputFields, List<String> outputFields, int index) {
 
         for (RexNode operand : call.getOperands()) {
             if (operand.isA(SqlKind.LOCAL_REF)) {
@@ -290,8 +288,7 @@ public class SelectHandler extends RelShuttleImpl {
                 }
                 else if (rexNode.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) rexNode;
-                    int columnOrdinal = ((RexLocalRef) operand).getIndex();
-                    queryColumns.add(new LiteralColumn(CalciteUtils.getValue(literal), columnOrdinal));
+                    queryColumns.add(new LiteralColumn(CalciteUtils.getValue(literal), index, outputFields.get(index)));
                 }
             }
         }

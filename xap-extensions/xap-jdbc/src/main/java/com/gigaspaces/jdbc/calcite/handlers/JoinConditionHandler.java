@@ -166,7 +166,7 @@ public class JoinConditionHandler {
                 }
                 joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(rexCall.getKind(), 2));
                 joinInfo.addJoinCondition(new ColumnValueJoinCondition(column));
-                joinInfo.addJoinCondition(new ColumnValueJoinCondition(new LiteralColumn(literalValue, -1)));
+                joinInfo.addJoinCondition(new ColumnValueJoinCondition(new LiteralColumn(literalValue, -1, null)));
                 return table; //TODO: @sagiv not good!. not the left always
             }
             case OR:
