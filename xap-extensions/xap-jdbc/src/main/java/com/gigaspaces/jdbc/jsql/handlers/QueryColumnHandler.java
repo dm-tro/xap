@@ -124,8 +124,8 @@ public class QueryColumnHandler extends SelectItemVisitorAdapter {
                 }
                 AggregationColumn aggregationColumn;
                 if (getTableContainer() != null) {  // assume we have only one table because of the checks above.
-                    IQueryColumn qc = getTableContainer().addQueryColumnWithColumnOrdinal(getColumnName(function.isAllColumns()),
-                            getColumnAlias(), false, -1);
+                    IQueryColumn qc = getTableContainer().addQueryColumnWithoutOrdinal(
+                            getColumnName(function.isAllColumns()), getColumnAlias(), false);
                     aggregationColumn = new AggregationColumn(aggregationFunctionType, getFunctionAlias(function), qc, true,
                             function.isAllColumns(), columnCounter++);
                     getTableContainer().addAggregationColumn(aggregationColumn);
@@ -172,7 +172,7 @@ public class QueryColumnHandler extends SelectItemVisitorAdapter {
 
             private void addAllTableColumn(TableContainer table) {
                 table.getAllColumnNames().forEach(columnName -> {
-                    IQueryColumn qc = table.addQueryColumnWithColumnOrdinal(columnName, null, false, -1);
+                    IQueryColumn qc = table.addQueryColumnWithoutOrdinal(columnName, null, false);
                     queryExecutor.addColumn(qc);
                 });
             }

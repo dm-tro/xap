@@ -23,7 +23,6 @@ public class QueryExecutor {
     private boolean isAllColumnsSelected = false;
     private final LinkedList<Integer> fieldCountList = new LinkedList<>();
     private final List<CaseColumn> caseColumns = new ArrayList<>();
-    private int columnCounter = 0;
     private final List<IQueryColumn> groupByColumns = new ArrayList<>();
 
 
@@ -133,7 +132,6 @@ public class QueryExecutor {
 
     public void addColumn(IQueryColumn column, boolean isVisible) {
         if (isVisible) {
-            column.setColumnOrdinal(columnCounter++);
             visibleColumns.add(column);
         } else {
             invisibleColumns.add(column);
@@ -145,7 +143,6 @@ public class QueryExecutor {
     }
 
     public void addAggregationColumn(AggregationColumn aggregationColumn) {
-        aggregationColumn.setColumnOrdinal(columnCounter++);
         this.aggregationColumns.add(aggregationColumn);
     }
 

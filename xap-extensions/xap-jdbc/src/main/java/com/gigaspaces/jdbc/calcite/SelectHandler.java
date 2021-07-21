@@ -36,6 +36,10 @@ public class SelectHandler extends RelShuttleImpl {
         this.session = session;
     }
 
+    public GSCalc getRootCalc() {
+        return rootCalc;
+    }
+
     @Override
     // TODO check inserting of same table
     public RelNode visit(TableScan scan) {
@@ -170,6 +174,7 @@ public class SelectHandler extends RelShuttleImpl {
             String outputField = outputFields.get(i);
             if(!outputField.startsWith("EXPR") && other.equals(rootCalc)){
                 IQueryColumn qc = queryExecutor.getColumnByColumnName(outputField);
+                qc.setColumnOrdinal(i);
                 queryExecutor.addColumn(qc);
             }
         }
@@ -198,8 +203,12 @@ public class SelectHandler extends RelShuttleImpl {
                 if (join.isSemiJoin()) {
                     queryExecutor.getVisibleColumns().addAll(leftContainer.getVisibleColumns());
                 } else {
+                    int index = 0;
                     for (TableContainer tableContainer : queryExecutor.getTables()) {
-                        queryExecutor.getVisibleColumns().addAll(tableContainer.getVisibleColumns());
+                        for (IQueryColumn visibleColumn : tableContainer.getVisibleColumns()) {
+                            visibleColumn.setColumnOrdinal(index++);
+                            queryExecutor.getVisibleColumns().add(visibleColumn);
+                        }
                     }
                 }
             }
@@ -234,6 +243,7 @@ public class SelectHandler extends RelShuttleImpl {
                 switch (node.getKind()) {
                     case INPUT_REF: {
                         IQueryColumn qc = queryExecutor.getColumnByColumnIndex(program.getSourceField(i));
+                        qc.setColumnOrdinal(i);
                         queryExecutor.addColumn(qc);
                         break;
                     }
@@ -284,7 +294,7 @@ public class SelectHandler extends RelShuttleImpl {
                     RexInputRef rexInputRef = (RexInputRef) rexNode;
                     String column = inputFields.get(rexInputRef.getIndex());
                     TableContainer tableByColumnIndex = queryExecutor.getTableByColumnIndex(rexInputRef.getIndex());
-                    queryColumns.add(tableByColumnIndex.addQueryColumnWithColumnOrdinal(column, null, false, -1));
+                    queryColumns.add(tableByColumnIndex.addQueryColumnWithoutOrdinal(column, null, false));
                 }
                 else if (rexNode.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) rexNode;
