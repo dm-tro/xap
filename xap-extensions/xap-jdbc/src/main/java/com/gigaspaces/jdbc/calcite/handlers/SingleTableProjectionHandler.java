@@ -41,7 +41,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
                 String alias = outputFields.get(i);
                 String originalName = inputFields.get(inputRef.getIndex());
                 if(!originalName.startsWith("EXPR"))
-                    tableContainer.addQueryColumnWithColumnOrdinal(originalName, alias, true, isRoot ? i : 0);
+                    tableContainer.addQueryColumnWithColumnOrdinal(originalName, alias, true, i);
             }
             else if(node instanceof RexCall){
                 RexCall call = (RexCall) node;
@@ -53,7 +53,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
                     case OTHER_FUNCTION:
                         sqlFunction = (SqlFunction) call.op;
                         addQueryColumns(call, queryColumns, inputFields, outputFields, i);
-                        functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, isRoot, -1);
+                        functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, isRoot, i);
                         if(isRoot)
                             tableContainer.getVisibleColumns().add(functionCallColumn);
                         else
@@ -62,7 +62,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
                     case CAST:
                         sqlFunction = (SqlCastFunction) call.op;
                         addQueryColumns(call, queryColumns, inputFields, outputFields, i);
-                        functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, isRoot, -1, call.getType().getFullTypeString());
+                        functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, isRoot, i, call.getType().getFullTypeString());
                         if(isRoot)
                             tableContainer.getVisibleColumns().add(functionCallColumn);
                         else
