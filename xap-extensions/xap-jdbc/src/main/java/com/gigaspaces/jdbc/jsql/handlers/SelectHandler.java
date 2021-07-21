@@ -3,9 +3,9 @@ package com.gigaspaces.jdbc.jsql.handlers;
 import com.gigaspaces.jdbc.JoinQueryExecutor;
 import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.exceptions.SQLExceptionWrapper;
-import com.gigaspaces.jdbc.model.join.JoinConditionColumnValue;
-import com.gigaspaces.jdbc.model.join.JoinConditionOperator;
+import com.gigaspaces.jdbc.model.join.ColumnValueJoinCondition;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
+import com.gigaspaces.jdbc.model.join.OperatorJoinCondition;
 import com.gigaspaces.jdbc.model.result.QueryResult;
 import com.gigaspaces.jdbc.model.table.ConcreteTableContainer;
 import com.gigaspaces.jdbc.model.table.IQueryColumn;
@@ -63,9 +63,9 @@ public class SelectHandler extends SelectVisitorAdapter implements FromItemVisit
             IQueryColumn rightColumn = rightTable.addQueryColumn(rColumn.getColumnName(), null, false, -1);
             IQueryColumn leftColumn = leftTable.addQueryColumn(lColumn.getColumnName(), null, false, -1);
             JoinInfo joinInfo = new JoinInfo(JoinInfo.JoinType.getType(join), true);
-            joinInfo.addJoinCondition(JoinConditionOperator.getConditionOperator(SqlKind.EQUALS, 2));
-            joinInfo.addJoinCondition(new JoinConditionColumnValue(rightColumn));
-            joinInfo.addJoinCondition(new JoinConditionColumnValue(leftColumn));
+            joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(SqlKind.EQUALS, 2));
+            joinInfo.addJoinCondition(new ColumnValueJoinCondition(rightColumn));
+            joinInfo.addJoinCondition(new ColumnValueJoinCondition(leftColumn));
             rightTable.setJoinInfo(joinInfo);
             if (leftTable.getJoinedTable() == null) { // TODO set right table every time and align it to recursive form in JoinTablesIterator
                 if (!rightTable.isJoined()) {

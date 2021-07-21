@@ -1,9 +1,9 @@
 package com.gigaspaces.jdbc.model.join;
 
-public class JoinConditionBooleanValue implements JoinCondition {
+public class BooleanValueJoinCondition implements JoinCondition {
     private final boolean value;
 
-    public JoinConditionBooleanValue(boolean value) {
+    public BooleanValueJoinCondition(boolean value) {
         this.value = value;
     }
 

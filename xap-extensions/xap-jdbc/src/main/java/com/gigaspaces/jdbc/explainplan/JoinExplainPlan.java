@@ -44,7 +44,8 @@ public class JoinExplainPlan extends JdbcExplainPlan {
     @Override
     public void format(TextReportFormatter formatter, boolean verbose) {
         if (!joinInfo.isEquiJoin()) {
-            throw new UnsupportedOperationException("Explain plan only supports equi join");
+            formatter.line("currently explain plan only supports equi join");
+            return;
         }
         JoinInfo.JoinAlgorithm joinAlgorithm = joinInfo.getRightColumn().getTableContainer().getQueryResult().getCursorType().equals(Cursor.Type.HASH) ? JoinInfo.JoinAlgorithm.Hash : JoinInfo.JoinAlgorithm.Nested;
         boolean hashJoin = joinAlgorithm.equals(JoinInfo.JoinAlgorithm.Hash);

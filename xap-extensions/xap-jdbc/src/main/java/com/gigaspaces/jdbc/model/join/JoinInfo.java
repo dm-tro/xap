@@ -28,8 +28,8 @@ public class JoinInfo {
             if (range != null) {
                 boolean found = false;
                 for (JoinCondition joinCondition : joinConditions) {
-                    if (joinCondition instanceof JoinConditionColumnValue) {
-                        IQueryColumn column = ((JoinConditionColumnValue) joinCondition).getColumn();
+                    if (joinCondition instanceof ColumnValueJoinCondition) {
+                        IQueryColumn column = ((ColumnValueJoinCondition) joinCondition).getColumn();
                         if (range.getPath().equals(column.getName())) {
                             hasMatch = range.getPredicate().execute(column.getCurrentValue());
                             found = true;
@@ -40,7 +40,7 @@ public class JoinInfo {
                 if (!found) {
                     hasMatch = false;
                 }
-            } else {
+            } else { //match from HashCursor
                 hasMatch = true;
             }
         } else if (joinType.equals(JoinType.INNER) || joinType.equals(JoinType.SEMI)) {
@@ -56,14 +56,14 @@ public class JoinInfo {
         for (int i = joinConditions.size() - 1; i >= 0; i--) {
             JoinCondition joinCondition = joinConditions.get(i);
             if (joinCondition.isOperator()) {
-                JoinConditionOperator joinConditionOperator = (JoinConditionOperator) joinCondition;
+                OperatorJoinCondition operatorJoinCondition = (OperatorJoinCondition) joinCondition;
                 boolean evaluate;
-                switch (joinConditionOperator.getSqlKind()) {
+                switch (operatorJoinCondition.getSqlKind()) {
                     case NOT:
                     case IS_NULL:
                     case IS_NOT_NULL:
-                        evaluate = joinConditionOperator.evaluate(stack.pop().getValue());
-                        stack.push(new JoinConditionBooleanValue(evaluate));
+                        evaluate = operatorJoinCondition.evaluate(stack.pop().getValue());
+                        stack.push(new BooleanValueJoinCondition(evaluate));
                         break;
                     case EQUALS:
                     case NOT_EQUALS:
@@ -72,18 +72,18 @@ public class JoinInfo {
                     case GREATER_THAN:
                     case GREATER_THAN_OR_EQUAL:
                     case LIKE:
-                        evaluate = joinConditionOperator.evaluate(stack.pop().getValue(), stack.pop().getValue());
-                        stack.push(new JoinConditionBooleanValue(evaluate));
+                        evaluate = operatorJoinCondition.evaluate(stack.pop().getValue(), stack.pop().getValue());
+                        stack.push(new BooleanValueJoinCondition(evaluate));
                         break;
                     case AND:
                     case OR:
-                        int numberOfOperands = joinConditionOperator.getNumberOfOperands();
+                        int numberOfOperands = operatorJoinCondition.getNumberOfOperands();
                         Object[] values = new Object[numberOfOperands];
                         for (int j = 0; j < numberOfOperands; j++) {
                             values[j] = stack.pop().getValue();
                         }
-                        evaluate = joinConditionOperator.evaluate(values);
-                        stack.push(new JoinConditionBooleanValue(evaluate));
+                        evaluate = operatorJoinCondition.evaluate(values);
+                        stack.push(new BooleanValueJoinCondition(evaluate));
                         break;
                     default:
                         throw new UnsupportedOperationException("Join with operator " + joinCondition + " is not supported");
@@ -119,8 +119,8 @@ public class JoinInfo {
     public boolean joinConditionsContainsOnlyEqualAndAndOperators() {
         for (JoinCondition joinCondition : joinConditions) {
             if (joinCondition.isOperator()) {
-                JoinConditionOperator joinConditionOperator = (JoinConditionOperator) joinCondition;
-                SqlKind sqlKind = joinConditionOperator.getSqlKind();
+                OperatorJoinCondition operatorJoinCondition = (OperatorJoinCondition) joinCondition;
+                SqlKind sqlKind = operatorJoinCondition.getSqlKind();
                 if (!sqlKind.equals(SqlKind.AND) && !sqlKind.equals(SqlKind.EQUALS)) {
                     return false;
                 }
@@ -131,14 +131,14 @@ public class JoinInfo {
 
     public IQueryColumn getLeftColumn() {
         if (isEqui) {
-            return ((JoinConditionColumnValue) this.joinConditions.get(2)).getColumn();
+            return ((ColumnValueJoinCondition) this.joinConditions.get(2)).getColumn();
         }
         return null;
     }
 
     public IQueryColumn getRightColumn() {
         if (isEqui) {
-            return ((JoinConditionColumnValue) this.joinConditions.get(1)).getColumn();
+            return ((ColumnValueJoinCondition) this.joinConditions.get(1)).getColumn();
         }
         return null;
     }

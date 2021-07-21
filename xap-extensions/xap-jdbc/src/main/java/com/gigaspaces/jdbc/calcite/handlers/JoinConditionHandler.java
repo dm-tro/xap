@@ -4,9 +4,9 @@ import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.calcite.GSJoin;
 import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.exceptions.SQLExceptionWrapper;
-import com.gigaspaces.jdbc.model.join.JoinConditionColumnValue;
-import com.gigaspaces.jdbc.model.join.JoinConditionOperator;
+import com.gigaspaces.jdbc.model.join.ColumnValueJoinCondition;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
+import com.gigaspaces.jdbc.model.join.OperatorJoinCondition;
 import com.gigaspaces.jdbc.model.table.ConcreteTableContainer;
 import com.gigaspaces.jdbc.model.table.IQueryColumn;
 import com.gigaspaces.jdbc.model.table.LiteralColumn;
@@ -49,7 +49,7 @@ public class JoinConditionHandler {
             case OR:
             case AND:
                 int operandsSize = call.getOperands().size();
-                joinInfo.addJoinCondition(JoinConditionOperator.getConditionOperator(call.getKind(), operandsSize));
+                joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(call.getKind(), operandsSize));
                 for (int i = 0; i < operandsSize; i++) {
                     leftContainer = handleSingleJoinCondition(join, (RexCall) call.getOperands().get(i));
                 }
@@ -75,12 +75,12 @@ public class JoinConditionHandler {
                 }
                 TableContainer table = queryExecutor.getTableByColumnIndex(operandIndex);
                 IQueryColumn column = queryExecutor.getColumnByColumnIndex(operandIndex);
-                joinInfo.addJoinCondition(JoinConditionOperator.getConditionOperator(rexCall.getKind(), 1));
-                joinInfo.addJoinCondition(new JoinConditionColumnValue(column));
+                joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(rexCall.getKind(), 1));
+                joinInfo.addJoinCondition(new ColumnValueJoinCondition(column));
                 return table; //TODO: @sagiv not good!. not the left always
             }
             case NOT: {
-                joinInfo.addJoinCondition(JoinConditionOperator.getConditionOperator(rexCall.getKind(), 1));
+                joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(rexCall.getKind(), 1));
                 return handleSingleJoinCondition(join, (RexCall) rexCall.getOperands().get(0));
             }
             case EQUALS:
@@ -113,9 +113,9 @@ public class JoinConditionHandler {
                     if (rightContainer.getJoinInfo() == null) {
                         rightContainer.setJoinInfo(joinInfo);
                     }
-                    joinInfo.addJoinCondition(JoinConditionOperator.getConditionOperator(rexCall.getKind(), 2));
-                    joinInfo.addJoinCondition(new JoinConditionColumnValue(rightColumn));
-                    joinInfo.addJoinCondition(new JoinConditionColumnValue(leftColumn));
+                    joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(rexCall.getKind(), 2));
+                    joinInfo.addJoinCondition(new ColumnValueJoinCondition(rightColumn));
+                    joinInfo.addJoinCondition(new ColumnValueJoinCondition(leftColumn));
 
                     if (leftContainer.getJoinedTable() == null) {
                         if (!rightContainer.isJoined()) {
@@ -164,9 +164,9 @@ public class JoinConditionHandler {
                 } catch (SQLException e) {
                     throw new SQLExceptionWrapper(e);//throw as runtime.
                 }
-                joinInfo.addJoinCondition(JoinConditionOperator.getConditionOperator(rexCall.getKind(), 2));
-                joinInfo.addJoinCondition(new JoinConditionColumnValue(column));
-                joinInfo.addJoinCondition(new JoinConditionColumnValue(new LiteralColumn(literalValue, -1)));
+                joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(rexCall.getKind(), 2));
+                joinInfo.addJoinCondition(new ColumnValueJoinCondition(column));
+                joinInfo.addJoinCondition(new ColumnValueJoinCondition(new LiteralColumn(literalValue, -1)));
                 return table; //TODO: @sagiv not good!. not the left always
             }
             case OR:

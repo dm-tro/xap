@@ -1,7 +1,7 @@
 package com.gigaspaces.jdbc.model.result;
 
+import com.gigaspaces.jdbc.model.join.ColumnValueJoinCondition;
 import com.gigaspaces.jdbc.model.join.JoinCondition;
-import com.gigaspaces.jdbc.model.join.JoinConditionColumnValue;
 import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.table.IQueryColumn;
 
@@ -31,10 +31,10 @@ public class HashedRowCursor implements Cursor<TableRow>{
         while (index < size) {
             joinCondition = joinInfo.getJoinConditions().get(index);
             if (!joinCondition.isOperator()) {
-                joinRightColumns.add(((JoinConditionColumnValue) joinCondition).getColumn());
+                joinRightColumns.add(((ColumnValueJoinCondition) joinCondition).getColumn());
                 index++;
                 joinCondition = joinInfo.getJoinConditions().get(index);
-                joinLeftColumns.add(((JoinConditionColumnValue) joinCondition).getColumn());
+                joinLeftColumns.add(((ColumnValueJoinCondition) joinCondition).getColumn());
             }
             index++;
         }
@@ -56,6 +56,7 @@ public class HashedRowCursor implements Cursor<TableRow>{
             for (IQueryColumn column : joinLeftColumns) {
                 values.add(column.getCurrentValue());
             }
+            //assumes that ArrayList hash code is the same if both list contains same elements in the same order.
             List<TableRow> match = hashMap.get(values);
             if(match == null) {
                 if(!(joinInfo.getJoinType().equals(JoinInfo.JoinType.LEFT) || joinInfo.getJoinType().equals(JoinInfo.JoinType.SEMI)))
@@ -84,10 +85,5 @@ public class HashedRowCursor implements Cursor<TableRow>{
     @Override
     public boolean isBeforeFirst() {
         return iterator == null;
-    }
-
-    @Override
-    public void setCurrent(TableRow current) {
-        this.current = current;
     }
 }

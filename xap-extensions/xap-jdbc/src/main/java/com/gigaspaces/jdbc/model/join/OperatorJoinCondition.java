@@ -5,16 +5,16 @@ import org.apache.calcite.sql.SqlKind;
 
 import java.util.Objects;
 
-public class JoinConditionOperator implements JoinCondition {
+public class OperatorJoinCondition implements JoinCondition {
     private final SqlKind sqlKind;
     private final int numberOfOperands;
 
-    JoinConditionOperator(SqlKind sqlKind, int numberOfOperands) {
+    OperatorJoinCondition(SqlKind sqlKind, int numberOfOperands) {
         this.sqlKind = sqlKind;
         this.numberOfOperands = numberOfOperands;
     }
 
-    public static JoinConditionOperator getConditionOperator(SqlKind sqlKind, int numberOfOperands) {
+    public static OperatorJoinCondition getConditionOperator(SqlKind sqlKind, int numberOfOperands) {
         switch (sqlKind) {
             case IS_NULL:
             case IS_NOT_NULL:
@@ -28,7 +28,7 @@ public class JoinConditionOperator implements JoinCondition {
             case LIKE:
             case OR:
             case AND:
-                return new JoinConditionOperator(sqlKind, numberOfOperands);
+                return new OperatorJoinCondition(sqlKind, numberOfOperands);
             default:
                 throw new UnsupportedOperationException("Join with sqlType " + sqlKind + " is not supported");
         }
@@ -73,23 +73,22 @@ public class JoinConditionOperator implements JoinCondition {
             case LESS_THAN:
                 return values[0] != null && values[1] != null && getCompareResult(values[0], values[1]) < 0;
             case AND:
-                boolean ans = true;
                 for (Object value : values) {
-                    if (value == null) {
+                    if (value == null || !(boolean) value) {
                         return false;
                     }
-                    ans &= (boolean) value;
                 }
-                return ans;
+                return true;
             case OR:
-                ans = false;
                 for (Object value : values) {
                     if (value == null) {
                         return false;
                     }
-                    ans |= (boolean) value;
+                    if ((boolean) value) {
+                        return true;
+                    }
                 }
-                return ans;
+                return false;
             case LIKE:
                 // TODO: @sagiv try to use range?
                 //                String regex = ((String) value).replaceAll("%", ".*").replaceAll("_", ".");
