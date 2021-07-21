@@ -25,14 +25,14 @@ public abstract class TableContainer {
 
     public abstract QueryResult executeRead(QueryExecutionConfig config) throws SQLException;
 
-    public abstract IQueryColumn addQueryColumn(String columnName, String columnAlias, boolean isVisible, int columnOrdinal);
+    public abstract IQueryColumn addQueryColumnWithColumnOrdinal(String columnName, String columnAlias, boolean isVisible, int columnOrdinal);
 
     public abstract List<IQueryColumn> getVisibleColumns();
 
     public abstract Set<IQueryColumn> getInvisibleColumns();
 
     public IQueryColumn addQueryColumnWithoutOrdinal(String columnName, String columnAlias, boolean isVisible){
-        return addQueryColumn(columnName, columnAlias, isVisible, EMPTY_ORDINAL);
+        return addQueryColumnWithColumnOrdinal(columnName, columnAlias, isVisible, EMPTY_ORDINAL);
     }
 
     public List<IQueryColumn> getAllQueryColumns() {
@@ -150,7 +150,7 @@ public abstract class TableContainer {
         List<String> columns = getAllColumnNames();
         for (int i = 0; i < columns.size(); i++) {
             String column = columns.get(i);
-            addQueryColumn(column, null, true, i);
+            addQueryColumnWithColumnOrdinal(column, null, true, i);
         }
     }
 

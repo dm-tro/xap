@@ -41,7 +41,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
                 String alias = outputFields.get(i);
                 String originalName = inputFields.get(inputRef.getIndex());
                 if(!originalName.startsWith("EXPR"))
-                    tableContainer.addQueryColumn(originalName, alias, true, isRoot ? i : 0);
+                    tableContainer.addQueryColumnWithColumnOrdinal(originalName, alias, true, isRoot ? i : 0);
             }
             else if(node instanceof RexCall){
                 RexCall call = (RexCall) node;

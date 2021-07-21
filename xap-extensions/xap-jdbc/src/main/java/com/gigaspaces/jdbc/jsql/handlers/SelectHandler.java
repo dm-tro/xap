@@ -60,8 +60,8 @@ public class SelectHandler extends SelectVisitorAdapter implements FromItemVisit
             }
             TableContainer rightTable = QueryColumnHandler.getTableForColumn(rColumn, tables);
             TableContainer leftTable = QueryColumnHandler.getTableForColumn(lColumn, tables);
-            IQueryColumn rightColumn = rightTable.addQueryColumn(rColumn.getColumnName(), null, false, -1);
-            IQueryColumn leftColumn = leftTable.addQueryColumn(lColumn.getColumnName(), null, false, -1);
+            IQueryColumn rightColumn = rightTable.addQueryColumnWithColumnOrdinal(rColumn.getColumnName(), null, false, -1);
+            IQueryColumn leftColumn = leftTable.addQueryColumnWithColumnOrdinal(lColumn.getColumnName(), null, false, -1);
             JoinInfo joinInfo = new JoinInfo(JoinInfo.JoinType.getType(join), true);
             joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(SqlKind.EQUALS, 2));
             joinInfo.addJoinCondition(new ColumnValueJoinCondition(rightColumn));

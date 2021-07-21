@@ -2,7 +2,6 @@ package com.gigaspaces.jdbc.calcite.handlers;
 
 import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.calcite.GSAggregate;
-import com.gigaspaces.jdbc.calcite.GSCalc;
 import com.gigaspaces.jdbc.model.table.*;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
@@ -11,8 +10,6 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
 
 public class AggregateHandler {
     private static AggregateHandler _instance;
@@ -41,7 +38,7 @@ public class AggregateHandler {
                     TableContainer table = queryExecutor.isJoinQuery() ? queryExecutor.getTableByColumnIndex(index) : queryExecutor.getTableByColumnName(columnName);
                     final IQueryColumn queryColumn = queryExecutor.getColumnByColumnIndex(index);
                     if(queryColumn == null){
-                        table.addQueryColumn(columnName, null, true, columnCounter.getAndIncrement());
+                        table.addQueryColumnWithColumnOrdinal(columnName, null, true, columnCounter.getAndIncrement());
                     }
                     IQueryColumn groupByColumn = new ConcreteColumn(queryColumn == null ? columnName : queryColumn.getName(), null, null, true, table, columnCounter.get());
                     table.addGroupByColumns(groupByColumn);
