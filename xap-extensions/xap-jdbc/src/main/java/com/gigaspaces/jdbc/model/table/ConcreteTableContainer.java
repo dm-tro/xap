@@ -8,7 +8,6 @@ import com.gigaspaces.internal.transport.ProjectionTemplate;
 import com.gigaspaces.jdbc.exceptions.ColumnNotFoundException;
 import com.gigaspaces.jdbc.exceptions.TypeNotFoundException;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
-import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.result.ConcreteQueryResult;
 import com.gigaspaces.jdbc.model.result.ExplainPlanQueryResult;
 import com.gigaspaces.jdbc.model.result.QueryResult;
@@ -252,7 +251,7 @@ public class ConcreteTableContainer extends TableContainer {
     }
 
     @Override
-    public IQueryColumn addQueryColumn(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
+    public IQueryColumn addQueryColumnWithColumnOrdinal(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
         if (!columnName.equalsIgnoreCase(IQueryColumn.UUID_COLUMN) && typeDesc.getFixedPropertyPositionIgnoreCase(columnName) == -1) {
             throw new ColumnNotFoundException("Could not find column with name [" + columnName + "]");
         }

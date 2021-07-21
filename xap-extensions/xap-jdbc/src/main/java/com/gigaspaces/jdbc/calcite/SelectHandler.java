@@ -284,7 +284,7 @@ public class SelectHandler extends RelShuttleImpl {
                     RexInputRef rexInputRef = (RexInputRef) rexNode;
                     String column = inputFields.get(rexInputRef.getIndex());
                     TableContainer tableByColumnIndex = queryExecutor.getTableByColumnIndex(rexInputRef.getIndex());
-                    queryColumns.add(tableByColumnIndex.addQueryColumn(column, null, false, -1));
+                    queryColumns.add(tableByColumnIndex.addQueryColumnWithColumnOrdinal(column, null, false, -1));
                 }
                 else if (rexNode.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) rexNode;

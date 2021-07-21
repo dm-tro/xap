@@ -3,11 +3,12 @@ package com.gigaspaces.jdbc.model.table;
 import com.gigaspaces.jdbc.calcite.pg.PgCalciteTable;
 import com.gigaspaces.jdbc.exceptions.ColumnNotFoundException;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
-import com.gigaspaces.jdbc.model.result.*;
+import com.gigaspaces.jdbc.model.result.QueryResult;
+import com.gigaspaces.jdbc.model.result.TempQueryResult;
 import com.j_spaces.core.IJSpace;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class SchemaTableContainer extends TempTableContainer {
@@ -34,7 +35,7 @@ public class SchemaTableContainer extends TempTableContainer {
     }
 
     @Override
-    public IQueryColumn addQueryColumn(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
+    public IQueryColumn addQueryColumnWithColumnOrdinal(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
         IQueryColumn queryColumn = tableColumns.stream()
                 .filter(qc -> qc.getName().equalsIgnoreCase(columnName))
                 .findFirst()
