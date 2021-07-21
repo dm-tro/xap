@@ -493,14 +493,12 @@ public class SystemProperties extends CommonSystemProperties {
      */
     public final static String UI_ENABLED = "com.gs.ops-ui.enabled";
 
-    /**
-     * System variable for enabling jdbc driver v3
-     */
-    public final static String JDBC_DRIVER_V3_ENABLED = "com.gs.jdbc-driver-v3.enabled";
+    public final static String JDBC_DRIVER = "com.gs.jdbc.driver";
 
-    public final static String JDBC_V3_DRIVER = "com.gs.jdbc.v3.driver";
-
-    public final static String JDBC_V3_DRIVER_CALCITE = "calcite";
+    public final static String JDBC_V1_DRIVER = "v1";
+    public final static String JDBC_V2_DRIVER = "v2";
+    public final static String JDBC_V3_DRIVER = "v3";//calcite
+    public final static String JDBC_V3_DRIVER_JSQL = "v3.jsql";
 
 
     public final static String EXPOSE_INTERNAL_API = "com.gs.expose.internal.api";

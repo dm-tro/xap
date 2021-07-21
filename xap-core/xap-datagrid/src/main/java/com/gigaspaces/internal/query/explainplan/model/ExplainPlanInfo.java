@@ -4,6 +4,7 @@ import com.gigaspaces.internal.query.explainplan.ExplainPlanV3;
 import com.gigaspaces.internal.query.explainplan.TextReportFormatter;
 import com.gigaspaces.internal.remoting.routing.partitioned.PartitionedClusterExecutionType;
 import com.gigaspaces.utils.Pair;
+import com.j_spaces.kernel.SystemProperties;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,7 +46,7 @@ public class ExplainPlanInfo extends JdbcExplainPlan {
     public String toString(boolean verbose, TextReportFormatter formatter) {
         String table;
         //TODO - fix later - in calcite we'll use short table names by default for now
-        if ("calcite".equals(System.getProperty("com.gs.jdbc.v3.driver"))) {
+        if (SystemProperties.JDBC_V3_DRIVER.equals(System.getProperty(SystemProperties.JDBC_DRIVER))) {
             table = tableAlias;
         } else {
             table = notEmpty(tableAlias) ? tableName + " as " + tableAlias : tableName;

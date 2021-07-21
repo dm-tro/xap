@@ -4,6 +4,7 @@ import com.gigaspaces.jdbc.data.Customer;
 import com.gigaspaces.jdbc.data.DataGenerator;
 import com.gigaspaces.jdbc.data.Product;
 import com.gigaspaces.jdbc.data.Purchase;
+import com.j_spaces.kernel.SystemProperties;
 import org.openspaces.core.GigaSpace;
 import org.openspaces.core.GigaSpaceConfigurer;
 import org.openspaces.core.space.AbstractSpaceConfigurer;
@@ -106,7 +107,7 @@ public class MainCalciteTester {
         String spaceName = "demo" + (newDriver ? "new" : "old");
         AbstractSpaceConfigurer configurer = embedded ? new EmbeddedSpaceConfigurer(spaceName)
                 .addProperty("space-config.QueryProcessor.datetime_format", "yyyy-MM-dd HH:mm:ss.SSS")
-                .addProperty("com.gs.jdbc.v3.driver", "calcite")
+                .addProperty(SystemProperties.JDBC_DRIVER, SystemProperties.JDBC_V3_DRIVER)//calcite
 //                .tieredStorage(new TieredStorageConfigurer().addTable(new TieredStorageTableConfig().setName(MyPojo.class.getName()).setCriteria("age > 20")))
                 : new SpaceProxyConfigurer(spaceName);
 

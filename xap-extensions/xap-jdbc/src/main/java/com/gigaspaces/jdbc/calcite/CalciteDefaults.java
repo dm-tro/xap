@@ -1,13 +1,14 @@
 package com.gigaspaces.jdbc.calcite;
 
+import com.j_spaces.kernel.SystemProperties;
+
 import java.util.Properties;
 
 public class CalciteDefaults {
 
 
-    public static final String DRIVER_KEY = "com.gs.jdbc.v3.driver";
-    public static final String DRIVER_DEFAULT = "jsql";
-    public static final String DRIVER_VALUE = "calcite";
+    public static final String DRIVER_KEY = SystemProperties.JDBC_DRIVER;
+    public static final String DRIVER_VALUE = SystemProperties.JDBC_V3_DRIVER;
 
     public static final String SUPPORT_INEQUALITY = "com.gs.jdbc.v3.support.inequality";
     public static final String SUPPORT_SEMICOLON_SEPARATOR = "com.gs.jdbc.v3.support.semicolon_separator";
@@ -17,14 +18,6 @@ public class CalciteDefaults {
 
     public static boolean isCalciteDriverPropertySet() {
         return DRIVER_VALUE.equals(System.getProperty(DRIVER_KEY));
-    }
-
-    public static boolean isCalciteDriverPropertySet(Properties properties) {
-        if (isCalciteDriverPropertySet()) return true;
-        if (properties != null) {
-            return DRIVER_VALUE.equals(properties.getProperty(DRIVER_KEY));
-        }
-        return false;
     }
 
     public static boolean isCalcitePropertySet(String key, Properties properties) {
