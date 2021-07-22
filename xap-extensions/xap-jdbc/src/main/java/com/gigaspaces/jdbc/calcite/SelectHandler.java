@@ -172,10 +172,11 @@ public class SelectHandler extends RelShuttleImpl {
         List<String> outputFields = program.getOutputRowType().getFieldNames();
         for (int i = 0; i < outputFields.size(); i++) {
             String outputField = outputFields.get(i);
-            if(!outputField.startsWith("EXPR") && other.equals(rootCalc)){
+            if(other.equals(rootCalc)){
                 IQueryColumn qc = queryExecutor.getColumnByColumnName(outputField);
                 qc.setColumnOrdinal(i);
-                queryExecutor.addColumn(qc);
+                if(!(qc instanceof AggregationColumn)) // already inserted by "AggregateHandler.instance().apply (gsAggregate, queryExecutor)"
+                    queryExecutor.addColumn(qc);
             }
         }
         if (program.getCondition() != null) {
