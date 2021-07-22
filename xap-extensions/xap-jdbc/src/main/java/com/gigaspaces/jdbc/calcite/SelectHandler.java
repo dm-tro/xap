@@ -172,18 +172,19 @@ public class SelectHandler extends RelShuttleImpl {
         List<String> outputFields = program.getOutputRowType().getFieldNames();
         for (int i = 0; i < outputFields.size(); i++) {
             String outputField = outputFields.get(i);
-            if(other.equals(rootCalc)){
+            if (other.equals(rootCalc)) {
                 IQueryColumn qc = queryExecutor.getColumnByColumnName(outputField);
-                qc.setColumnOrdinal(i);
-                if(!(qc instanceof AggregationColumn)) // already inserted by "AggregateHandler.instance().apply (gsAggregate, queryExecutor)"
+                if (qc != null) {
+                    qc.setColumnOrdinal(i);
                     queryExecutor.addColumn(qc);
+                }
             }
-        }
-        if (program.getCondition() != null) {
-            ConditionHandler conditionHandler = new ConditionHandler(program, queryExecutor, program.getInputRowType().getFieldNames());
-            program.getCondition().accept(conditionHandler);
-            for (Map.Entry<TableContainer, QueryTemplatePacket> tableContainerQueryTemplatePacketEntry : conditionHandler.getQTPMap().entrySet()) {
-                tableContainerQueryTemplatePacketEntry.getKey().setQueryTemplatePacket(tableContainerQueryTemplatePacketEntry.getValue());
+            if (program.getCondition() != null) {
+                ConditionHandler conditionHandler = new ConditionHandler(program, queryExecutor, program.getInputRowType().getFieldNames());
+                program.getCondition().accept(conditionHandler);
+                for (Map.Entry<TableContainer, QueryTemplatePacket> tableContainerQueryTemplatePacketEntry : conditionHandler.getQTPMap().entrySet()) {
+                    tableContainerQueryTemplatePacketEntry.getKey().setQueryTemplatePacket(tableContainerQueryTemplatePacketEntry.getValue());
+                }
             }
         }
     }

@@ -63,7 +63,7 @@ public class AggregateHandler {
                     throw new IllegalArgumentException("Wrong number of arguments to aggregation function ["
                             + aggregationFunctionType + "()], expected 1 column but was '*'");
                 }
-                aggregationColumn = new AggregationColumn(aggregationFunctionType, String.format("%s(%s)", aggregateCall.getAggregation().getName().toLowerCase(Locale.ROOT), column), null, true, true, columnCounter.getAndIncrement());
+                aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), null, true, true, columnCounter.getAndIncrement());
                 queryExecutor.getTables().forEach(tableContainer -> tableContainer.addAggregationColumn(aggregationColumn));
                 queryExecutor.getTables().forEach(t -> t.getAllColumnNames().forEach(columnName -> {
                     IQueryColumn qc = t.addQueryColumnWithoutOrdinal(columnName, null, false);
@@ -74,10 +74,12 @@ public class AggregateHandler {
                 final TableContainer table = queryExecutor.isJoinQuery() ? queryExecutor.getTableByColumnIndex(index) : queryExecutor.getTableByColumnName(column);
                 final IQueryColumn queryColumn = queryExecutor.isJoinQuery() ? queryExecutor.getColumnByColumnIndex(index) : table.addQueryColumnWithoutOrdinal(column, null, false);
                 queryExecutor.addColumn(queryColumn, false);
-                aggregationColumn = new AggregationColumn(aggregationFunctionType, getFunctionAlias(aggregateCall, column), queryColumn, true, false, columnCounter.getAndIncrement());
+                aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), queryColumn, true
+                        , false,
+                        columnCounter.getAndIncrement());
                 table.addAggregationColumn(aggregationColumn);
             }
-            queryExecutor.addAggregationColumn(aggregationColumn);
+//            queryExecutor.addAggregationColumn(aggregationColumn);
         }
     }
 
