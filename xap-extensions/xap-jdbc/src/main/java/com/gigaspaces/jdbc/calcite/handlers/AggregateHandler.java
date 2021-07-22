@@ -24,7 +24,7 @@ public class AggregateHandler {
         return _instance;
     }
 
-    public void apply(GSAggregate gsAggregate, QueryExecutor queryExecutor) {
+    public void apply(GSAggregate gsAggregate, QueryExecutor queryExecutor, boolean hasCalc) {
         RelNode child = gsAggregate.getInput();
         if (child instanceof GSAggregate) {
             throw new UnsupportedOperationException("Unsupported yet!");
@@ -34,10 +34,13 @@ public class AggregateHandler {
             groupSet.forEach(index -> {
                 String columnName = fields.get(index);
                 TableContainer table = queryExecutor.isJoinQuery() ? queryExecutor.getTableByColumnIndex(index) : queryExecutor.getTableByColumnName(columnName);
-                final IQueryColumn queryColumn = queryExecutor.getColumnByColumnIndex(index);
+                final IQueryColumn queryColumn = queryExecutor.isJoinQuery() ? queryExecutor.getColumnByColumnIndex(index) : queryExecutor.getColumnByColumnName(columnName);
                 if (queryColumn == null) {
                     IQueryColumn qc = table.addQueryColumnWithoutOrdinal(columnName, null, true);
                     table.addProjectedColumn(qc);
+                    if(!hasCalc){
+                        queryExecutor.addProjectedColumn(qc);
+                    }
                 }
                 IQueryColumn groupByColumn = new ConcreteColumn(queryColumn == null ? columnName :
                         queryColumn.getName(), null, null, true, table, -1);
@@ -62,11 +65,13 @@ public class AggregateHandler {
                 }
                 aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), null,
                         true, true, -1);
-                queryExecutor.getTables().forEach(tableContainer -> tableContainer.addAggregationColumn(aggregationColumn));
+                queryExecutor.getTables().forEach(tableContainer -> {
+                    tableContainer.addAggregationColumn(aggregationColumn);
+                    tableContainer.addProjectedColumn(aggregationColumn);
+                });
                 queryExecutor.getTables().forEach(t -> t.getAllColumnNames().forEach(columnName -> {
                     IQueryColumn qc = t.addQueryColumnWithoutOrdinal(columnName, null, false);
                     queryExecutor.addColumn(qc);
-                    queryExecutor.addProjectedColumn(qc);
                 }));
             } else {
                 int index = aggregateCall.getArgList().get(0);
@@ -78,10 +83,10 @@ public class AggregateHandler {
                 table.addAggregationColumn(aggregationColumn);
                 table.addProjectedColumn(aggregationColumn);
             }
+            queryExecutor.addAggregationColumn(aggregationColumn);
+            if(!hasCalc) {
+                queryExecutor.addProjectedColumn(aggregationColumn);
+            }
         }
-    }
-
-    private String getFunctionAlias(AggregateCall call, String column) {
-        return String.format("%s(%s)", call.getAggregation().getName().toLowerCase(Locale.ROOT), column);
     }
 }

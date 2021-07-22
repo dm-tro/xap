@@ -62,10 +62,6 @@ public class QueryExecutor {
         }
         if (tables.size() == 1) { //Simple Query
             TableContainer singleTable = tables.get(0);
-            if(singleTable.hasGroupByColumns()){
-                singleTable.getVisibleColumns().clear();
-                singleTable.getVisibleColumns().addAll(singleTable.getGroupByColumns());
-            }
             QueryResult queryResult =  singleTable.executeRead(config);
             final List<IQueryColumn> selectedColumns = getSelectedColumns();
             if(!selectedColumns.isEmpty() && config.isCalcite()){

@@ -162,7 +162,7 @@ public class SelectHandler extends RelShuttleImpl {
     }
 
     private void handleAggregate(GSAggregate gsAggregate) {
-        AggregateHandler.instance().apply(gsAggregate, queryExecutor);
+        AggregateHandler.instance().apply(gsAggregate, queryExecutor, childToCalc.containsKey(gsAggregate));
         if(childToCalc.containsKey(gsAggregate)){
             handleCalcFromAggregate(childToCalc.get(gsAggregate));
         }

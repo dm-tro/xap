@@ -128,4 +128,9 @@ public class AggregationColumn implements IQueryColumn {
     public Object getValue(IEntryPacket entryPacket) {
         return queryColumn.getValue(entryPacket);
     }
+
+    @Override
+    public boolean isAggregate() {
+        return true;
+    }
 }

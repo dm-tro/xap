@@ -96,6 +96,10 @@ public class ConcreteTableContainer extends TableContainer {
             if (explainPlanImpl != null) {
                 queryResult = new ExplainPlanQueryResult(visibleColumns, explainPlanImpl.getExplainPlanInfo(), this);
             } else {
+                if(hasGroupByColumns() && !hasAggregationFunctions() && getGroupByColumns().size() != getProjectedColumns().size()){
+                    getProjectedColumns().clear();
+                    getProjectedColumns().addAll(getGroupByColumns());
+                }
                 queryResult = new ConcreteQueryResult(res, this);
                 if( hasGroupByColumns() && hasOrderColumns() ){
                     queryResult.sort();

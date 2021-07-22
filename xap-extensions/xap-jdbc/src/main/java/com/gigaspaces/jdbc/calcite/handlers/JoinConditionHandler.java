@@ -96,7 +96,6 @@ public class JoinConditionHandler {
                     int secondOperandIndex = ((RexInputRef) rexCall.getOperands().get(1)).getIndex();
                     int leftIndex;
                     int rightIndex;
-                    int diff = join.getLeft().getRowType().getFieldCount();
                     if (firstOperandIndex < secondOperandIndex) {
                         leftIndex = firstOperandIndex;
                         rightIndex = secondOperandIndex;
@@ -104,8 +103,6 @@ public class JoinConditionHandler {
                         leftIndex = secondOperandIndex;
                         rightIndex = firstOperandIndex;
                     }
-                    String lColumn = join.getLeft().getRowType().getFieldNames().get(leftIndex);
-                    String rColumn = join.getRight().getRowType().getFieldNames().get(rightIndex - diff);
                     TableContainer rightContainer = queryExecutor.getTableByColumnIndex(rightIndex);
                     TableContainer leftContainer = queryExecutor.getTableByColumnIndex(leftIndex);
                     IQueryColumn rightColumn = queryExecutor.getColumnByColumnIndex(rightIndex);
