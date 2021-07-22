@@ -1,5 +1,6 @@
 package com.gigaspaces.jdbc.calcite.handlers;
 
+import com.gigaspaces.internal.utils.ObjectConverter;
 import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.jdbc.exceptions.SQLExceptionWrapper;
@@ -12,7 +13,11 @@ import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +59,7 @@ public class ConditionHandler extends RexShuttle {
     @Override
     public RexNode visitLocalRef(RexLocalRef localRef) {
         final RexNode node = getNode(localRef);
-        if (!(node instanceof  RexLocalRef)) {
+        if (!(node instanceof RexLocalRef)) {
             node.accept(this);
         }
         return localRef;
@@ -62,7 +67,7 @@ public class ConditionHandler extends RexShuttle {
 
     @Override
     public RexNode visitInputRef(RexInputRef inputRef) {
-        if(inputRef.getType().getSqlTypeName().equals(SqlTypeName.BOOLEAN)) {
+        if (inputRef.getType().getSqlTypeName().equals(SqlTypeName.BOOLEAN)) {
             String column = fields.get(inputRef.getIndex());
             TableContainer table = getTableForColumn(column);
             assert table != null;
@@ -72,7 +77,7 @@ public class ConditionHandler extends RexShuttle {
         return inputRef;
     }
 
-    private void handleRexCall(RexCall call){
+    private void handleRexCall(RexCall call) {
         switch (call.getKind()) {
             case AND: {
                 ConditionHandler leftHandler = new ConditionHandler(program, queryExecutor, fields, tableContainer);
@@ -117,11 +122,11 @@ public class ConditionHandler extends RexShuttle {
                 break;
             }
             default:
-                throw new UnsupportedOperationException(String.format("Queries with %s are not supported",call.getKind()));
+                throw new UnsupportedOperationException(String.format("Queries with %s are not supported", call.getKind()));
         }
     }
 
-    private void handleNotRexCall(RexCall call){
+    private void handleNotRexCall(RexCall call) {
         switch (call.getKind()) {
             case AND: {
                 ConditionHandler leftHandler = new ConditionHandler(program, queryExecutor, fields, tableContainer);
@@ -148,16 +153,16 @@ public class ConditionHandler extends RexShuttle {
                 break;
             }
             default:
-                throw new UnsupportedOperationException(String.format("Queries with %s are not supported",call.getKind()));
+                throw new UnsupportedOperationException(String.format("Queries with %s are not supported", call.getKind()));
         }
     }
 
-    private void handleSingleOperandsCall(RexNode operand, SqlKind sqlKind){
+    private void handleSingleOperandsCall(RexNode operand, SqlKind sqlKind) {
         String column = null;
         Range range = null;
         RexNode leftOp = null;
         RexNode rightOp = null;
-        switch (operand.getKind()){
+        switch (operand.getKind()) {
             case INPUT_REF:
                 column = fields.get(((RexInputRef) operand).getIndex());
                 break;
@@ -181,21 +186,21 @@ public class ConditionHandler extends RexShuttle {
                 }
                 return;
             default:
-                throw new UnsupportedOperationException(String.format("Queries with %s are not supported",operand.getKind()));
+                throw new UnsupportedOperationException(String.format("Queries with %s are not supported", operand.getKind()));
         }
         TableContainer table = getTableForColumn(column);
         assert table != null;
         switch (sqlKind) {
             case IS_NULL:
                 range = new IsNullRange(column);
-                if(table.getJoinInfo() != null){
+                if (table.getJoinInfo() != null) {
                     table.getJoinInfo().insertRangeToJoinInfo(range);
                     return;
                 }
                 break;
             case IS_NOT_NULL:
                 range = new NotNullRange(column);
-                if(table.getJoinInfo() != null){
+                if (table.getJoinInfo() != null) {
                     table.getJoinInfo().insertRangeToJoinInfo(range);
                     return;
                 }
@@ -205,23 +210,23 @@ public class ConditionHandler extends RexShuttle {
                     throw new UnsupportedOperationException("Queries with NOT on non-boolean column are not supported yet");
                 }
                 range = new EqualValueRange(column, false);
-                if(table.getJoinInfo() != null){
+                if (table.getJoinInfo() != null) {
                     table.getJoinInfo().insertRangeToJoinInfo(range);
                     return; //TODO: @sagiv dead code can be removed?
                 }
                 break;
             default:
-                throw new UnsupportedOperationException(String.format("Queries with %s are not supported",sqlKind));
+                throw new UnsupportedOperationException(String.format("Queries with %s are not supported", sqlKind));
         }
         qtpMap.put(table, table.createQueryTemplatePacketWithRange(range));
     }
 
-    private void handleTwoOperandsCall(RexNode leftOp, RexNode rightOp, SqlKind sqlKind, boolean isNot){
+    private void handleTwoOperandsCall(RexNode leftOp, RexNode rightOp, SqlKind sqlKind, boolean isNot) {
         String column = null;
         boolean isRowNum = false;
         Object value = null;
         Range range = null;
-        switch (leftOp.getKind()){
+        switch (leftOp.getKind()) {
             case LITERAL:
                 value = CalciteUtils.getValue((RexLiteral) leftOp);
             case INPUT_REF:
@@ -237,9 +242,9 @@ public class ConditionHandler extends RexShuttle {
                 isRowNum = true;
                 break;
             default:
-                throw new UnsupportedOperationException(String.format("Queries with %s are not supported",sqlKind));
+                throw new UnsupportedOperationException(String.format("Queries with %s are not supported", sqlKind));
         }
-        switch (rightOp.getKind()){
+        switch (rightOp.getKind()) {
             case LITERAL:
                 value = CalciteUtils.getValue((RexLiteral) rightOp);
                 break;
@@ -255,10 +260,14 @@ public class ConditionHandler extends RexShuttle {
             case ROW_NUMBER:
                 isRowNum = true;
                 break;
+            case MINUS:
+            case PLUS:
+                value = handleMinusOperation((RexCall)rightOp);
+                break;
             default:
-                throw new UnsupportedOperationException(String.format("Queries with %s are not supported",sqlKind));
+                throw new UnsupportedOperationException(String.format("Queries with %s are not supported", sqlKind));
         }
-        if(isRowNum) {
+        if (isRowNum) {
             handleRowNumber(sqlKind, value);
             return; //return and don't continue.
         }
@@ -295,17 +304,102 @@ public class ConditionHandler extends RexShuttle {
                 range = isNot ? new NotRegexRange(column, regex) : new RegexRange(column, regex);
                 break;
             default:
-                throw new UnsupportedOperationException(String.format("Queries with %s are not supported",sqlKind));
+                throw new UnsupportedOperationException(String.format("Queries with %s are not supported", sqlKind));
         }
         qtpMap.put(table, table.createQueryTemplatePacketWithRange(range));
     }
 
+    private Object handleMinusOperation(RexCall op) {
+        int sign = op.getKind() == SqlKind.MINUS ? -1 : 1;
+        RexNode left = getNode((RexLocalRef) op.getOperands().get(0));
+        RexNode right = getNode((RexLocalRef) op.getOperands().get(1));
+        Object leftValue = null;
+        Object rightValue = null;
+        switch (left.getKind()) {
+            case LITERAL:
+                try {
+                    leftValue = ObjectConverter.convert(CalciteUtils.getValue((RexLiteral) left), CalciteUtils.getJavaType(left));
+                } catch (SQLException throwables) {
+                    throw new RuntimeException( op.getKind() + " - cannot convert " + CalciteUtils.getValue((RexLiteral) left) + " into type: " + CalciteUtils.getJavaType(left));
+                }
+                break;
+            default:
+                throw new RuntimeException(op.getKind() + " doesn't support: " + left.getKind());
+        }
+        switch (right.getKind()) {
+            case LITERAL:
+                try {
+                    rightValue = ObjectConverter.convert(CalciteUtils.getValue((RexLiteral) right), CalciteUtils.getJavaType(right));
+                } catch (SQLException throwables) {
+                    throw new RuntimeException(op.getKind() + " - cannot convert " + CalciteUtils.getValue((RexLiteral) right) + " into type: " + CalciteUtils.getJavaType(right));
+                }
+                break;
+            default:
+                throw new RuntimeException(op.getKind() + " doesn't support: " + right.getKind());
+        }
+        if (leftValue instanceof LocalTime) {
+            if (rightValue instanceof BigDecimal) {
+                switch (right.getType().getSqlTypeName()) {
+                    case INTERVAL_HOUR:
+                    case INTERVAL_HOUR_MINUTE:
+                    case INTERVAL_MINUTE:
+                    case INTERVAL_SECOND:
+                    case INTERVAL_HOUR_SECOND:
+                    case INTERVAL_MINUTE_SECOND:
+                        return ((LocalTime) leftValue).plusNanos(((BigDecimal) rightValue).longValue() * 1000 * 1000 * sign);
+                    default:
+                        throw new RuntimeException("cannot add/subtract " + right.getType().getSqlTypeName() + " from time");
+                }
+            }
+
+        }
+        if (leftValue instanceof LocalDate) {
+            if (rightValue instanceof BigDecimal) {
+                switch (right.getType().getSqlTypeName()) {
+                    case INTERVAL_YEAR:
+                    case INTERVAL_MONTH:
+                    case INTERVAL_YEAR_MONTH:
+                        return ((LocalDate) leftValue).plusMonths(((BigDecimal) rightValue).longValue() * sign);
+                    case INTERVAL_DAY:
+                        return ((LocalDate) leftValue).plusDays(((BigDecimal) rightValue).longValue() / (1000 * 60 * 60 * 24 * sign));
+                    default:
+                        throw new RuntimeException("cannot add/subtract " + right.getType().getSqlTypeName() + " from date");
+                }
+            }
+        }
+        if (leftValue instanceof LocalDateTime) {
+            if (rightValue instanceof BigDecimal) {
+                switch (right.getType().getSqlTypeName()) {
+                    case INTERVAL_YEAR:
+                    case INTERVAL_MONTH:
+                    case INTERVAL_YEAR_MONTH:
+                        return ((LocalDateTime) leftValue).plusMonths(((BigDecimal) rightValue).longValue() * sign);
+                    case INTERVAL_DAY:
+                    case INTERVAL_HOUR:
+                    case INTERVAL_DAY_HOUR:
+                    case INTERVAL_MINUTE:
+                    case INTERVAL_DAY_MINUTE:
+                    case INTERVAL_HOUR_MINUTE:
+                    case INTERVAL_SECOND:
+                    case INTERVAL_DAY_SECOND:
+                    case INTERVAL_HOUR_SECOND:
+                    case INTERVAL_MINUTE_SECOND:
+                        return ((LocalDateTime) leftValue).plusNanos(((BigDecimal) rightValue).longValue() * 1000 * 1000 * sign);
+                    default:
+                        throw new RuntimeException("cannot add/subtract " + right.getType().getSqlTypeName() + " from timestamp");
+                }
+            }
+        }
+        throw new RuntimeException("cannot add/subtract " + right.getType().getSqlTypeName() + " from " + left.getType().getSqlTypeName());
+    }
+
+
     private void handleRowNumber(SqlKind sqlKind, Object value) {
         if (!(value instanceof Number)) { //TODO: bigDecimal...
-            throw new IllegalArgumentException("rowNum value must be of type Integer, but was [" + value.getClass() +"]");
+            throw new IllegalArgumentException("rowNum value must be of type Integer, but was [" + value.getClass() + "]");
         }
         Integer limit = ((Number) value).intValue();
-        if(limit < 0) {
+        if (limit < 0) {
             throw new IllegalArgumentException("rowNum value must be greater than 0");
         }
         switch (sqlKind) {
@@ -323,8 +417,8 @@ public class ConditionHandler extends RexShuttle {
     }
 
 
-    private TableContainer getTableForColumn(String column){
-        if(tableContainer != null) {
+    private TableContainer getTableForColumn(String column) {
+        if (tableContainer != null) {
             return tableContainer;
         }
         for (TableContainer table : queryExecutor.getTables()) {
@@ -405,7 +499,7 @@ public class ConditionHandler extends RexShuttle {
         }
     }
 
-    private RexNode getNode(RexLocalRef localRef){
+    private RexNode getNode(RexLocalRef localRef) {
         return program.getExprList().get(localRef.getIndex());
     }
 }

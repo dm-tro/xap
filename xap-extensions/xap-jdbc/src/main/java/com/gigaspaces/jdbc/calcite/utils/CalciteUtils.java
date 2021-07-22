@@ -42,6 +42,19 @@ public class CalciteUtils {
                 if (dateTypeResolver != null) dateTypeResolver.setResolvedDateType(literal);
                 String[] strings = literal.toString().split(":");
                 return String.join(":", strings[0], strings[1], strings[2]);
+            case INTERVAL_YEAR:
+            case INTERVAL_YEAR_MONTH:
+            case INTERVAL_MONTH:
+            case INTERVAL_DAY:
+            case INTERVAL_DAY_HOUR:
+            case INTERVAL_DAY_MINUTE:
+            case INTERVAL_DAY_SECOND:
+            case INTERVAL_HOUR:
+            case INTERVAL_HOUR_MINUTE:
+            case INTERVAL_HOUR_SECOND:
+            case INTERVAL_MINUTE:
+            case INTERVAL_MINUTE_SECOND:
+            case INTERVAL_SECOND:
             case SYMBOL:
                 return literal.getValue();
             default:
@@ -74,6 +87,19 @@ public class CalciteUtils {
                 return Double.class;
             case REAL:
             case DECIMAL:
+            case INTERVAL_YEAR:
+            case INTERVAL_YEAR_MONTH:
+            case INTERVAL_MONTH:
+            case INTERVAL_DAY:
+            case INTERVAL_DAY_HOUR:
+            case INTERVAL_DAY_MINUTE:
+            case INTERVAL_DAY_SECOND:
+            case INTERVAL_HOUR:
+            case INTERVAL_HOUR_MINUTE:
+            case INTERVAL_HOUR_SECOND:
+            case INTERVAL_MINUTE:
+            case INTERVAL_MINUTE_SECOND:
+            case INTERVAL_SECOND:
                 return BigDecimal.class;
             case DATE:
                 return java.time.LocalDate.class;

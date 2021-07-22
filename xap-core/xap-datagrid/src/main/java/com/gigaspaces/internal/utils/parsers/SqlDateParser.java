@@ -18,7 +18,9 @@ package com.gigaspaces.internal.utils.parsers;
 
 import com.j_spaces.jdbc.QueryProcessor;
 
+import java.sql.Date;
 import java.sql.SQLException;
+import java.time.LocalDate;
 
 /**
  * @author Niv Ingberg
@@ -32,6 +34,14 @@ public class SqlDateParser extends AbstractDateTimeParser {
 
     @Override
     public Object parse(String s) throws SQLException {
+        // if the string to parse is shorter than the pattern it will fail, we will try parsing using the default
+        // LocalDateParser instead (ISO_LOCAL_DATE)
+        if (s.length() < _pattern.length()){
+            try{
+                return Date.valueOf(LocalDate.parse(s));
+            }
+            catch (Exception e){}
+        }
         return new java.sql.Date(parseDateTime(s).getTime());
     }
 }

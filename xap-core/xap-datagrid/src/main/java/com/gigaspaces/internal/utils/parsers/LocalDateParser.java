@@ -37,7 +37,16 @@ public class LocalDateParser extends AbstractDateTimeParser {
 
     @Override
     public Object parse(String s) throws SQLException {
-        LocalDate date = LocalDate.parse(s, formatter);
+        LocalDate date;
+        // if the string to parse is not same length as the pattern it will fail, we will try parsing using the default
+        // LocalDateParser instead (ISO_LOCAL_DATE)
+        if (s.length() != _pattern.length()){
+            try{
+                date = LocalDate.parse(s);
+            }
+            catch (Exception e){}
+        }
+        date = LocalDate.parse(s, formatter);
         if (date == null)
             throw new SQLException("Wrong " + _desc + " format, expected format=[" + _pattern + "], provided=[" + s + "]", "GSP", -378);
 
