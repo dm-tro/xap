@@ -39,6 +39,9 @@ public class QueryExecutor {
     }
 
     public void addProjectedColumn(IQueryColumn column) {
+        if(!column.isVisible()) {
+            throw new IllegalStateException("Projected column must be visible");
+        }
         this.projectedColumns.add(column);
     }
 
