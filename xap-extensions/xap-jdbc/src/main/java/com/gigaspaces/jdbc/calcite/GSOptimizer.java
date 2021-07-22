@@ -148,11 +148,11 @@ public class GSOptimizer {
     }
 
     public GSRelNode optimize(SqlNode validatedAst) {
-        RelRoot logicalPlan = optimizeLogical(validatedAst, this.validator);
+        RelRoot logicalPlan = optimizeLogical(validatedAst);
         return optimizePhysical(logicalPlan);
     }
 
-    public RelRoot optimizeLogical(SqlNode validatedAst, SqlValidator validator) {
+    public RelRoot optimizeLogical(SqlNode validatedAst) {
         SqlToRelConverter relConverter = new SqlToRelConverter(
             null,
             validator,
@@ -167,7 +167,7 @@ public class GSOptimizer {
         return relConverter.convertQuery(validatedAst, false, true);
     }
 
-    private GSRelNode optimizePhysical(RelRoot logicalRoot) {
+    public GSRelNode optimizePhysical(RelRoot logicalRoot) {
         Program program = GSOptimizerProgram.createProgram();
         RelNode logicalPlan = logicalRoot.rel;
         RelNode res = program.run(

@@ -13,6 +13,9 @@ import com.gigaspaces.sql.aggregatornode.netty.exception.ProtocolException;
 import com.gigaspaces.sql.aggregatornode.netty.utils.*;
 import com.google.common.collect.ImmutableList;
 import com.j_spaces.jdbc.ResponsePacket;
+import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.externalize.RelWriterImpl;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -20,6 +23,7 @@ import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.PrintWriter;
@@ -172,7 +176,7 @@ public class QueryProviderImpl implements QueryProvider {
         }
     }
 
-    private StatementImpl prepareStatement(Session session, String name, String query, int[] paramTypes) throws ParseException {
+    private StatementImpl prepareStatement(Session session, String name, String query, int[] paramTypes) throws ProtocolException {
         // TODO possibly it's worth to add SqlEmptyNode to sql parser
         if (query.trim().isEmpty()) {
             assert paramTypes.length == 0;
@@ -186,13 +190,28 @@ public class QueryProviderImpl implements QueryProvider {
         }
     }
 
-    private StatementImpl prepareStatement(Session session, String name, GSOptimizer optimizer, int[] paramTypes, SqlNode ast) {
+    private StatementImpl prepareStatement(Session session, String name, GSOptimizer optimizer, int[] paramTypes, SqlNode ast) throws ProtocolException {
         if (SqlUtil.isCallTo(ast, SqlShowOption.OPERATOR)) {
             StatementDescription description = describeShow((SqlShowOption) ast);
             return new StatementImpl(this, Constants.EMPTY_STRING, ast, optimizer, description);
         } else if (ast.getKind() == SqlKind.SET_OPTION) {
             // all parameters should be literals
             return new StatementImpl(this, Constants.EMPTY_STRING, ast, optimizer, StatementDescription.EMPTY);
+        } else if (ast.getKind() == SqlKind.EXPLAIN) {
+            SqlExplain explain = (SqlExplain) ast;
+            SqlNode explicandum = explain.getExplicandum();
+            if (explicandum.isA(SqlKind.QUERY)) {
+                SqlExplain.Depth depth = explain.getDepth();
+                SqlExplainLevel detailLevel = explain.getDetailLevel();
+                SqlExplainFormat format = explain.getFormat();
+
+                GSOptimizerValidationResult validated = optimizer.validate(explicandum);
+                explicandum = validated.getValidatedAst();
+                RelDataType rowType = validated.getRowType();
+
+                return new ExplainStatement(this, name, depth, detailLevel, format, rowType, explicandum, optimizer);
+            }
+            throw new NonBreakingException(ErrorCodes.UNSUPPORTED_FEATURE, "cannot explain non-query statement. query: " + ast);
         } else {
             GSOptimizerValidationResult validated = optimizer.validate(ast);
 
@@ -262,11 +281,49 @@ public class QueryProviderImpl implements QueryProvider {
             return prepareShowOption(session, name, statement, (SqlShowOption) query);
         }
 
+        if (statement instanceof ExplainStatement) {
+            return prepareExplain(name, (ExplainStatement) statement, formatCodes, query);
+        }
+
         if (query.isA(SqlKind.QUERY)) {
             return prepareQuery(session, name, statement, params, formatCodes, query);
         }
 
         throw new NonBreakingException(ErrorCodes.UNSUPPORTED_FEATURE, "Unsupported query kind: " + query.getKind());
+    }
+
+    @NotNull
+    private QueryPortal<Object[]> prepareExplain(String name, ExplainStatement statement, int[] formatCodes, SqlNode query) throws NonBreakingException {
+        try {
+            ThrowingSupplier<Iterator<Object[]>, ProtocolException> op = () -> {
+                try {
+                    SqlExplain.Depth depth = statement.getDepth();
+                    if (depth == SqlExplain.Depth.TYPE) {
+                        String dump = RelOptUtil.dumpType(statement.getRowType());
+                        return singletonList(new Object[]{dump}).iterator();
+                    }
+
+                    GSOptimizer optimizer = statement.getOptimizer();
+                    RelRoot relRoot = optimizer.optimizeLogical(query);
+
+                    RelNode plan = relRoot.project();
+                    if (depth == SqlExplain.Depth.LOGICAL) {
+                        String dump = RelOptUtil.dumpPlan("", plan, statement.getFormat(), statement.getDetailLevel());
+                        return singletonList(new Object[]{dump}).iterator();
+                    }
+
+                    plan = optimizer.optimizePhysical(relRoot);
+                    String dump = RelOptUtil.dumpPlan("", plan, statement.getFormat(), statement.getDetailLevel());
+
+                    return singletonList(new Object[]{dump}).iterator();
+                } catch (Exception e) {
+                    throw new NonBreakingException(ErrorCodes.INTERNAL_ERROR, "Failed to execute operation.", e);
+                }
+            };
+            return new QueryPortal<>(this, name, statement, PortalCommand.SELECT, formatCodes, op);
+        } catch (Exception e) {
+            throw new NonBreakingException(ErrorCodes.INTERNAL_ERROR, "Failed to prepare portal", e);
+        }
     }
 
     private Portal<?> prepareShowOption(Session session, String name, Statement statement, SqlShowOption show) {
