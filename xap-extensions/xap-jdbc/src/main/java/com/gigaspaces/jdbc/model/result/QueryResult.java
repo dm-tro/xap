@@ -128,6 +128,7 @@ public abstract class QueryResult {
     }
 
     public ResultEntry convertEntriesToResultArrays() {
+        applyCaseColumnsOnResult();
         // Column (field) names and labels (aliases)
         int columns = getSelectedColumns().size();
 
@@ -192,15 +193,15 @@ public abstract class QueryResult {
 
     }
 
-    public void addCaseColumnsToResults(List<CaseColumn> caseColumns) {
+    private void applyCaseColumnsOnResult() {
         if (this instanceof ExplainPlanQueryResult) return;
+        List<CaseColumn> caseColumns =
+                getSelectedColumns().stream().filter(qc -> qc instanceof CaseColumn).map(qc -> ((CaseColumn) qc)).collect(Collectors.toList());
         if (caseColumns.isEmpty()) return;
         List<TableRow> newRows = new ArrayList<>();
         for (TableRow row : getRows()) {
             newRows.add(new TableRow(row, caseColumns));
         }
         setRows(newRows);
-        selectedColumns.addAll(caseColumns);
-        selectedColumns.sort(null);
     }
 }

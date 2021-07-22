@@ -109,6 +109,7 @@ public class SelectHandler extends RelShuttleImpl {
                 if (node instanceof RexCall) {
                     FunctionCallColumn functionCallColumn = getFunctionCallColumn(program, (RexCall) node);
                     queryExecutor.addColumn(functionCallColumn);
+                    queryExecutor.addProjectedColumn(functionCallColumn);
                 }
             }
         }
@@ -175,8 +176,8 @@ public class SelectHandler extends RelShuttleImpl {
             if (other.equals(rootCalc)) {
                 IQueryColumn qc = queryExecutor.getColumnByColumnName(outputField);
                 if (qc != null) {
-                    qc.setColumnOrdinal(i);
                     queryExecutor.addColumn(qc);
+                    queryExecutor.addProjectedColumn(qc);
                 }
             }
             if (program.getCondition() != null) {
@@ -204,13 +205,11 @@ public class SelectHandler extends RelShuttleImpl {
                     || ((root instanceof GSSort) && ((GSSort) root).getInput().equals(join))) { // root is GSSort and its child is join
                 if (join.isSemiJoin()) {
                     queryExecutor.getVisibleColumns().addAll(leftContainer.getVisibleColumns());
+                    queryExecutor.getProjectedColumns().addAll(leftContainer.getProjectedColumns());
                 } else {
-                    int index = 0;
                     for (TableContainer tableContainer : queryExecutor.getTables()) {
-                        for (IQueryColumn visibleColumn : tableContainer.getVisibleColumns()) {
-                            visibleColumn.setColumnOrdinal(index++);
-                            queryExecutor.getVisibleColumns().add(visibleColumn);
-                        }
+                        queryExecutor.getVisibleColumns().addAll(tableContainer.getVisibleColumns());
+                        queryExecutor.getProjectedColumns().addAll(tableContainer.getProjectedColumns());
                     }
                 }
             }
@@ -245,8 +244,8 @@ public class SelectHandler extends RelShuttleImpl {
                 switch (node.getKind()) {
                     case INPUT_REF: {
                         IQueryColumn qc = queryExecutor.getColumnByColumnIndex(program.getSourceField(i));
-                        qc.setColumnOrdinal(i);
                         queryExecutor.addColumn(qc);
+                        queryExecutor.addProjectedColumn(qc);
                         break;
                     }
                     case CASE: {
@@ -256,6 +255,7 @@ public class SelectHandler extends RelShuttleImpl {
                                 null, caseColumn);
                         caseHandler.visitCall(call);
                         queryExecutor.addCaseColumn(caseColumn);
+                        queryExecutor.addProjectedColumn(caseColumn);
                         break;
                     }
                     case OTHER_FUNCTION: {
@@ -265,11 +265,14 @@ public class SelectHandler extends RelShuttleImpl {
                         addQueryColumns(call, queryColumns, program, inputFields, outputFields, i);
                         FunctionCallColumn functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), outputFields.get(i), true, i);
                         queryExecutor.addColumn(functionCallColumn);
+                        queryExecutor.addProjectedColumn(functionCallColumn);
                         break;
                     }
                     case LITERAL: {
                         RexLiteral literal = (RexLiteral) node;
-                        queryExecutor.addColumn(new LiteralColumn(CalciteUtils.getValue(literal), i, outputFields.get(i)));
+                        LiteralColumn column = new LiteralColumn(CalciteUtils.getValue(literal), i, outputFields.get(i));
+                        queryExecutor.addColumn(column);
+                        queryExecutor.addProjectedColumn(column);
                         break;
                     }
                     default:

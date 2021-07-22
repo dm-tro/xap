@@ -47,22 +47,6 @@ public class CalciteQueryHandler {
         SelectHandler selectHandler = new SelectHandler(qE, session);
         relNode.accept(selectHandler);
         QueryResult queryResult = qE.execute();
-//        GSCalc rootCalc = selectHandler.getRootCalc();
-//        if(rootCalc != null) {
-//            int ordinal = 0;
-//            for (String fieldName : rootCalc.getProgram().getOutputRowType().getFieldNames()) {
-//                boolean found = false;
-//                for (IQueryColumn selectedColumn : queryResult.getSelectedColumns()) {
-//                    if (selectedColumn.getAlias().equals(fieldName)) {
-//                        selectedColumn.setColumnOrdinal(ordinal++);
-//                        found = true;
-//                    }
-//                }
-//                if(!found) {
-//                    throw new IllegalStateException("could not found column [" + fieldName + "] in " + queryResult.getSelectedColumns());
-//                }
-//            }
-//        }
         if (explainPlan) {
             packet.setResultEntry(((ExplainPlanQueryResult) queryResult).convertEntriesToResultArrays(queryExecutionConfig));
         } else {

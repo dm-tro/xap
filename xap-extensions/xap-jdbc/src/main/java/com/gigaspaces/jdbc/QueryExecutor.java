@@ -1,5 +1,6 @@
 package com.gigaspaces.jdbc;
 
+import com.gigaspaces.jdbc.calcite.CalciteDefaults;
 import com.gigaspaces.jdbc.exceptions.ColumnNotFoundException;
 import com.gigaspaces.jdbc.explainplan.SubqueryExplainPlan;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class QueryExecutor {
+    private final List<IQueryColumn> projectedColumns = new ArrayList<>();
     private final List<TableContainer> tables = new ArrayList<>();
     private final Set<IQueryColumn> invisibleColumns = new HashSet<>();
     private final List<IQueryColumn> visibleColumns = new ArrayList<>();
@@ -36,6 +38,14 @@ public class QueryExecutor {
         this(space, new QueryExecutionConfig().setCalcite(false), preparedValues);
     }
 
+    public void addProjectedColumn(IQueryColumn column) {
+        this.projectedColumns.add(column);
+    }
+
+    public List<IQueryColumn> getProjectedColumns() {
+        return projectedColumns;
+    }
+
     public QueryResult execute() throws SQLException {
         if (tables.size() == 0) {
             if( hasOnlyFunctions() ) {
@@ -54,7 +64,6 @@ public class QueryExecutor {
                 singleTable.getVisibleColumns().addAll(singleTable.getGroupByColumns());
             }
             QueryResult queryResult =  singleTable.executeRead(config);
-            queryResult.addCaseColumnsToResults(caseColumns);
             final List<IQueryColumn> selectedColumns = getSelectedColumns();
             if(!selectedColumns.isEmpty() && config.isCalcite()){
                 if (config.isExplainPlan()) {
@@ -73,9 +82,7 @@ public class QueryExecutor {
             return queryResult;
         }
         JoinQueryExecutor joinE = new JoinQueryExecutor(this);
-        QueryResult joinQueryResult = joinE.execute();
-        joinQueryResult.addCaseColumnsToResults(caseColumns);
-        return joinQueryResult;
+        return joinE.execute();
     }
 
     public boolean isJoinQuery(){
@@ -216,6 +223,9 @@ public class QueryExecutor {
     }
 
     public List<IQueryColumn> getSelectedColumns(){
+        if (CalciteDefaults.isCalciteDriverPropertySet()) {
+            return getProjectedColumns();
+        }
         return Stream.concat(getVisibleColumns().stream(), getAggregationColumns().stream()).sorted().collect(Collectors.toList());
     }
 
