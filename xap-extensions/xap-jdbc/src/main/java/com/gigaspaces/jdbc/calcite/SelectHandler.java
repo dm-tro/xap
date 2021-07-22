@@ -124,7 +124,7 @@ public class SelectHandler extends RelShuttleImpl {
                 RexNode funcArgument = program.getExprList().get(((RexLocalRef) operand).getIndex());
                 if (funcArgument.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) funcArgument;
-                    params.add(new LiteralColumn(CalciteUtils.getValue(literal, castType), -1, null));
+                    params.add(new LiteralColumn(CalciteUtils.getValue(literal, castType), -1, null, false));
                 } else if (funcArgument instanceof RexCall) { //operator
                     RexCall function= (RexCall) funcArgument;
                     params.add(getFunctionCallColumn(program, function));
@@ -270,7 +270,8 @@ public class SelectHandler extends RelShuttleImpl {
                     }
                     case LITERAL: {
                         RexLiteral literal = (RexLiteral) node;
-                        LiteralColumn column = new LiteralColumn(CalciteUtils.getValue(literal), i, outputFields.get(i));
+                        LiteralColumn column = new LiteralColumn(CalciteUtils.getValue(literal), i,
+                                outputFields.get(i), true);
                         queryExecutor.addColumn(column);
                         queryExecutor.addProjectedColumn(column);
                         break;
@@ -303,7 +304,7 @@ public class SelectHandler extends RelShuttleImpl {
                 }
                 else if (rexNode.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) rexNode;
-                    queryColumns.add(new LiteralColumn(CalciteUtils.getValue(literal), index, outputFields.get(index)));
+                    queryColumns.add(new LiteralColumn(CalciteUtils.getValue(literal), index, outputFields.get(index), false));
                 }
             }
         }
