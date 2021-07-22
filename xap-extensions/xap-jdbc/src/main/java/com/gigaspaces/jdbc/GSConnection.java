@@ -50,7 +50,7 @@ public class GSConnection extends GConnection {
         Matcher matcher = pattern.matcher(connectionString);
         if (matcher.matches()) {
             String version = matcher.group("version");
-            if (version != null && !version.equals("v3"))
+            if (version != null && !version.equals(DRIVER_VERSION))
                 throw new SQLException("Unmatched version [" + version + "] for driver");
             String hosts = String.join(",", matcher.group("host").split(";"));
             String spaceName = matcher.group("spaceName");
@@ -241,8 +241,7 @@ public class GSConnection extends GConnection {
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        GPreparedStatement ps = new GPreparedStatement(this, sql);
-        return ps;
+        return new GPreparedStatement(this, sql);
     }
 
     @Override
