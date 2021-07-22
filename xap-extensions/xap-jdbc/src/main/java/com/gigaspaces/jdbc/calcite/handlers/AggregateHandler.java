@@ -9,7 +9,6 @@ import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class AggregateHandler {
     private static AggregateHandler _instance;
@@ -32,22 +31,20 @@ public class AggregateHandler {
         }
         List<String> fields = child.getRowType().getFieldNames();
         for (ImmutableBitSet groupSet : gsAggregate.groupSets) {
-            AtomicInteger columnCounter = new AtomicInteger();
-            AtomicInteger groupByColumnCounter = new AtomicInteger();
             groupSet.forEach(index -> {
                 String columnName = fields.get(index);
                 TableContainer table = queryExecutor.isJoinQuery() ? queryExecutor.getTableByColumnIndex(index) : queryExecutor.getTableByColumnName(columnName);
                 final IQueryColumn queryColumn = queryExecutor.getColumnByColumnIndex(index);
                 if (queryColumn == null) {
-                    table.addQueryColumnWithColumnOrdinal(columnName, null, true, columnCounter.getAndIncrement());
+                    IQueryColumn qc = table.addQueryColumnWithoutOrdinal(columnName, null, true);
+                    table.addProjectedColumn(qc);
                 }
                 IQueryColumn groupByColumn = new ConcreteColumn(queryColumn == null ? columnName :
-                        queryColumn.getName(), null, null, true, table, groupByColumnCounter.getAndIncrement());
+                        queryColumn.getName(), null, null, true, table, -1);
                 table.addGroupByColumns(groupByColumn);
             });
         }
 
-        AtomicInteger columnCounter = new AtomicInteger();
         for (AggregateCall aggregateCall : gsAggregate.getAggCallList()) {
             AggregationFunctionType aggregationFunctionType = AggregationFunctionType.valueOf(aggregateCall.getAggregation().getName().toUpperCase());
             if (aggregateCall.getArgList().size() > 1) {
@@ -63,11 +60,13 @@ public class AggregateHandler {
                     throw new IllegalArgumentException("Wrong number of arguments to aggregation function ["
                             + aggregationFunctionType + "()], expected 1 column but was '*'");
                 }
-                aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), null, true, true, columnCounter.getAndIncrement());
+                aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), null,
+                        true, true, -1);
                 queryExecutor.getTables().forEach(tableContainer -> tableContainer.addAggregationColumn(aggregationColumn));
                 queryExecutor.getTables().forEach(t -> t.getAllColumnNames().forEach(columnName -> {
                     IQueryColumn qc = t.addQueryColumnWithoutOrdinal(columnName, null, false);
                     queryExecutor.addColumn(qc);
+                    queryExecutor.addProjectedColumn(qc);
                 }));
             } else {
                 int index = aggregateCall.getArgList().get(0);
@@ -75,11 +74,10 @@ public class AggregateHandler {
                 final IQueryColumn queryColumn = queryExecutor.isJoinQuery() ? queryExecutor.getColumnByColumnIndex(index) : table.addQueryColumnWithoutOrdinal(column, null, false);
                 queryExecutor.addColumn(queryColumn, false);
                 aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), queryColumn, true
-                        , false,
-                        columnCounter.getAndIncrement());
+                        , false, -1);
                 table.addAggregationColumn(aggregationColumn);
+                table.addProjectedColumn(aggregationColumn);
             }
-//            queryExecutor.addAggregationColumn(aggregationColumn);
         }
     }
 

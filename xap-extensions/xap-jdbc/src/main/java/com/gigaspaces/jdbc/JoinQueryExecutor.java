@@ -3,7 +3,10 @@ package com.gigaspaces.jdbc;
 import com.gigaspaces.jdbc.explainplan.JoinExplainPlan;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
 import com.gigaspaces.jdbc.model.result.*;
-import com.gigaspaces.jdbc.model.table.*;
+import com.gigaspaces.jdbc.model.table.AggregationColumn;
+import com.gigaspaces.jdbc.model.table.IQueryColumn;
+import com.gigaspaces.jdbc.model.table.OrderColumn;
+import com.gigaspaces.jdbc.model.table.TableContainer;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -31,7 +34,7 @@ public class JoinQueryExecutor {
         this.config.setJoinUsed(true);
         this.aggregationColumns = queryExecutor.getAggregationColumns();
         this.allQueryColumns = Stream.concat(visibleColumns.stream(), invisibleColumns.stream()).collect(Collectors.toList());
-        this.selectedQueryColumns = Stream.concat(this.visibleColumns.stream(), this.aggregationColumns.stream()).sorted().collect(Collectors.toList());
+        this.selectedQueryColumns = queryExecutor.getSelectedColumns();
     }
 
     public QueryResult execute() {
