@@ -19,11 +19,6 @@ public class LiteralColumn implements IQueryColumn{
     }
 
     @Override
-    public void setColumnOrdinal(int ordinal) {
-        columnOrdinal = ordinal;
-    }
-
-    @Override
     public String getName() {
         return (alias == null) ? "\'" + value + "\'" : alias;
     }
