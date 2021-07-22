@@ -206,8 +206,13 @@ public class QueryExecutor {
     }
 
     public IQueryColumn getColumnByColumnName(String column) {
-        TableContainer tableContainer = getTableByColumnName(column);
-        return tableContainer.getAllQueryColumns().stream().filter(qc -> qc.getName().equals(column)).findFirst().orElse(null);
+        for (TableContainer table : tables) {
+            IQueryColumn result = table.getSelectedColumns().stream().filter(qc -> qc.getName().equals(column) || qc.getAlias().equals(column)).findFirst().orElse(null);
+            if(result != null) {
+                return result;
+            }
+        }
+        return null;
     }
 
     public List<IQueryColumn> getSelectedColumns(){
