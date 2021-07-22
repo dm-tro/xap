@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
+
 public class SchemaTableContainer extends TempTableContainer {
     private final PgCalciteTable table;
     private final IJSpace space;
@@ -18,7 +20,7 @@ public class SchemaTableContainer extends TempTableContainer {
     public SchemaTableContainer(PgCalciteTable table, String alias, IJSpace space) {
         super(alias);
         this.table = table;
-        this.tableColumns.addAll(Arrays.stream(table.getSchemas()).map(x -> new ConcreteColumn(x.getPropertyName(), x.getJavaType(), null, true, this, -1)).collect(Collectors.toList()));
+        this.tableColumns.addAll(Arrays.stream(table.getSchemas()).map(x -> new ConcreteColumn(x.getPropertyName(), x.getJavaType(), null, true, this, EMPTY_ORDINAL)).collect(Collectors.toList()));
         this.space = space;
 
         allColumnNamesSorted.addAll(tableColumns.stream().map(IQueryColumn::getAlias).collect(Collectors.toList()));

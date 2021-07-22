@@ -10,6 +10,8 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.List;
 import java.util.Locale;
 
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
+
 public class AggregateHandler {
     private static AggregateHandler _instance;
 
@@ -24,7 +26,7 @@ public class AggregateHandler {
         return _instance;
     }
 
-    public void apply(GSAggregate gsAggregate, QueryExecutor queryExecutor) {
+    public void apply(GSAggregate gsAggregate, QueryExecutor queryExecutor, boolean hasCalc) {
         RelNode child = gsAggregate.getInput();
         if (child instanceof GSAggregate) {
             throw new UnsupportedOperationException("Unsupported yet!");
@@ -34,13 +36,15 @@ public class AggregateHandler {
             groupSet.forEach(index -> {
                 String columnName = fields.get(index);
                 TableContainer table = queryExecutor.isJoinQuery() ? queryExecutor.getTableByColumnIndex(index) : queryExecutor.getTableByColumnName(columnName);
-                final IQueryColumn queryColumn = queryExecutor.getColumnByColumnIndex(index);
+                IQueryColumn queryColumn = queryExecutor.isJoinQuery() ? queryExecutor.getColumnByColumnIndex(index) : queryExecutor.getColumnByColumnName(columnName);
                 if (queryColumn == null) {
-                    IQueryColumn qc = table.addQueryColumnWithoutOrdinal(columnName, null, true);
-                    table.addProjectedColumn(qc);
+                    queryColumn = table.addQueryColumnWithoutOrdinal(columnName, null, true);
+                    table.addProjectedColumn(queryColumn);
                 }
-                IQueryColumn groupByColumn = new ConcreteColumn(queryColumn == null ? columnName :
-                        queryColumn.getName(), null, null, true, table, -1);
+                if(!hasCalc){
+                    queryExecutor.addProjectedColumn(queryColumn);
+                }
+                IQueryColumn groupByColumn = queryColumn.copy();
                 table.addGroupByColumns(groupByColumn);
             });
         }
@@ -61,27 +65,32 @@ public class AggregateHandler {
                             + aggregationFunctionType + "()], expected 1 column but was '*'");
                 }
                 aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), null,
-                        true, true, -1);
-                queryExecutor.getTables().forEach(tableContainer -> tableContainer.addAggregationColumn(aggregationColumn));
+                        true, true, EMPTY_ORDINAL);
+                queryExecutor.getTables().forEach(tableContainer -> {
+                    tableContainer.addAggregationColumn(aggregationColumn);
+                    tableContainer.addProjectedColumn(aggregationColumn);
+                });
                 queryExecutor.getTables().forEach(t -> t.getAllColumnNames().forEach(columnName -> {
                     IQueryColumn qc = t.addQueryColumnWithoutOrdinal(columnName, null, false);
                     queryExecutor.addColumn(qc);
-                    queryExecutor.addProjectedColumn(qc);
                 }));
             } else {
                 int index = aggregateCall.getArgList().get(0);
                 final TableContainer table = queryExecutor.isJoinQuery() ? queryExecutor.getTableByColumnIndex(index) : queryExecutor.getTableByColumnName(column);
-                final IQueryColumn queryColumn = queryExecutor.isJoinQuery() ? queryExecutor.getColumnByColumnIndex(index) : table.addQueryColumnWithoutOrdinal(column, null, false);
-                queryExecutor.addColumn(queryColumn, false);
+//                final IQueryColumn queryColumn = queryExecutor.isJoinQuery() ? queryExecutor.getColumnByColumnIndex(index) : table.addQueryColumnWithoutOrdinal(column, null, false);
+                final IQueryColumn queryColumn = queryExecutor.getColumnByColumnIndex(index);
+                if(queryColumn != null && !queryColumn.isFunction()){
+                    queryExecutor.addColumn(queryColumn, false);
+                }
                 aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), queryColumn, true
-                        , false, -1);
+                        , false, EMPTY_ORDINAL);
                 table.addAggregationColumn(aggregationColumn);
                 table.addProjectedColumn(aggregationColumn);
             }
+            queryExecutor.addAggregationColumn(aggregationColumn);
+            if(!hasCalc) {
+                queryExecutor.addProjectedColumn(aggregationColumn);
+            }
         }
-    }
-
-    private String getFunctionAlias(AggregateCall call, String column) {
-        return String.format("%s(%s)", call.getAggregation().getName().toLowerCase(Locale.ROOT), column);
     }
 }

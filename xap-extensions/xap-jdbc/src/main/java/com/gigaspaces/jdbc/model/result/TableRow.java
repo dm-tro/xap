@@ -20,7 +20,7 @@ public class TableRow implements Comparable<TableRow> {
     private final Object[] groupByValues;
 
     public TableRow(IQueryColumn[] columns, Object... values) {
-        this(columns, values, new OrderColumn[0], new Object[0], new ConcreteColumn[0], new Object[0]);
+        this(columns, values, new OrderColumn[0], new Object[0], new IQueryColumn[0], new Object[0]);
     }
 
     public TableRow(IQueryColumn[] columns, Object[] values, OrderColumn[] orderColumns, Object[] orderValues,
@@ -114,7 +114,7 @@ public class TableRow implements Comparable<TableRow> {
             orderValues[i] = orderColumns.get(i).getCurrentValue();
         }
 
-        this.groupByColumns = groupByColumns.toArray(new ConcreteColumn[0]);
+        this.groupByColumns = groupByColumns.toArray(new IQueryColumn[0]);
         groupByValues = new Object[this.groupByColumns.length];
         for (int i = 0; i < groupByColumns.size(); i++) {
             groupByValues[i] = groupByColumns.get(i).getCurrentValue();
@@ -148,7 +148,7 @@ public class TableRow implements Comparable<TableRow> {
             this.orderValues[i] = row.getPropertyValue(this.orderColumns[i].getName());
         }
 
-        this.groupByColumns = tempTableContainer.getGroupByColumns().toArray(new ConcreteColumn[0]);
+        this.groupByColumns = tempTableContainer.getGroupByColumns().toArray(new IQueryColumn[0]);
         this.groupByValues = new Object[this.groupByColumns.length];
         for (int i = 0; i < this.groupByColumns.length; i++) {
             this.groupByValues[i] = row.getPropertyValue(this.groupByColumns[i].getName());
@@ -168,7 +168,7 @@ public class TableRow implements Comparable<TableRow> {
             this.orderValues[i] = row.getPropertyValue(this.orderColumns[i].getName());
         }
 
-        this.groupByColumns = queryExecutor.getGroupByColumns().toArray(new ConcreteColumn[0]);
+        this.groupByColumns = queryExecutor.getGroupByColumns().toArray(new IQueryColumn[0]);
         this.groupByValues = new Object[this.groupByColumns.length];
         for (int i = 0; i < this.groupByColumns.length; i++) {
             this.groupByValues[i] = row.getPropertyValue(this.groupByColumns[i].getName());

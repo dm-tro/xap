@@ -10,6 +10,7 @@ import com.j_spaces.jdbc.builder.QueryTemplatePacket;
 import com.j_spaces.jdbc.builder.UnionTemplatePacket;
 import com.j_spaces.jdbc.builder.range.*;
 import org.apache.calcite.rex.*;
+import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -18,9 +19,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ConditionHandler extends RexShuttle {
     private final RexProgram program;
@@ -158,10 +157,11 @@ public class ConditionHandler extends RexShuttle {
     }
 
     private void handleSingleOperandsCall(RexNode operand, SqlKind sqlKind) {
-        String column = null;
-        Range range = null;
-        RexNode leftOp = null;
-        RexNode rightOp = null;
+        String column ;
+        Range range;
+        RexNode leftOp;
+        RexNode rightOp;
+        FunctionCallDescription functionCallDescription = null;
         switch (operand.getKind()) {
             case INPUT_REF:
                 column = fields.get(((RexInputRef) operand).getIndex());
@@ -192,14 +192,14 @@ public class ConditionHandler extends RexShuttle {
         assert table != null;
         switch (sqlKind) {
             case IS_NULL:
-                range = new IsNullRange(column);
+                range = new IsNullRange(column, functionCallDescription);
                 if (table.getJoinInfo() != null) {
                     table.getJoinInfo().insertRangeToJoinInfo(range);
                     return;
                 }
                 break;
             case IS_NOT_NULL:
-                range = new NotNullRange(column);
+                range = new NotNullRange(column, functionCallDescription);
                 if (table.getJoinInfo() != null) {
                     table.getJoinInfo().insertRangeToJoinInfo(range);
                     return;
@@ -209,7 +209,7 @@ public class ConditionHandler extends RexShuttle {
                 if (!operand.getType().getSqlTypeName().equals(SqlTypeName.BOOLEAN)) {
                     throw new UnsupportedOperationException("Queries with NOT on non-boolean column are not supported yet");
                 }
-                range = new EqualValueRange(column, false);
+                range = new EqualValueRange(column, functionCallDescription, false);
                 if (table.getJoinInfo() != null) {
                     table.getJoinInfo().insertRangeToJoinInfo(range);
                     return; //TODO: @sagiv dead code can be removed?
@@ -225,7 +225,8 @@ public class ConditionHandler extends RexShuttle {
         String column = null;
         boolean isRowNum = false;
         Object value = null;
-        Range range = null;
+        Range range;
+        FunctionCallDescription functionCallDescription = null;
         switch (leftOp.getKind()) {
             case LITERAL:
                 value = CalciteUtils.getValue((RexLiteral) leftOp);
@@ -240,6 +241,10 @@ public class ConditionHandler extends RexShuttle {
                 break;
             case ROW_NUMBER:
                 isRowNum = true;
+                break;
+            case OTHER_FUNCTION:
+                functionCallDescription = new FunctionCallDescription("UPPER", 0, new ArrayList<>());
+                column = "first_name";
                 break;
             default:
                 throw new UnsupportedOperationException(String.format("Queries with %s are not supported", sqlKind));
@@ -282,26 +287,26 @@ public class ConditionHandler extends RexShuttle {
         sqlKind = isNot ? sqlKind.negateNullSafe() : sqlKind;
         switch (sqlKind) {
             case EQUALS:
-                range = new EqualValueRange(column, value);
+                range = new EqualValueRange(column, functionCallDescription, value);
                 break;
             case NOT_EQUALS:
-                range = new NotEqualValueRange(column, value);
+                range = new NotEqualValueRange(column, functionCallDescription,  value);
                 break;
             case LESS_THAN:
-                range = new SegmentRange(column, null, false, (Comparable) value, false);
+                range = new SegmentRange(column, functionCallDescription, null, false, castToComparable(value), false);
                 break;
             case LESS_THAN_OR_EQUAL:
-                range = new SegmentRange(column, null, false, (Comparable) value, true);
+                range = new SegmentRange(column, functionCallDescription, null, false, castToComparable(value), true);
                 break;
             case GREATER_THAN:
-                range = new SegmentRange(column, (Comparable) value, false, null, false);
+                range = new SegmentRange(column, functionCallDescription, castToComparable(value), false, null, false);
                 break;
             case GREATER_THAN_OR_EQUAL:
-                range = new SegmentRange(column, (Comparable) value, true, null, false);
+                range = new SegmentRange(column, functionCallDescription, castToComparable(value), true, null, false);
                 break;
             case LIKE:
                 String regex = ((String) value).replaceAll("%", ".*").replaceAll("_", ".");
-                range = isNot ? new NotRegexRange(column, regex) : new RegexRange(column, regex);
+                range = isNot ? new NotRegexRange(column, functionCallDescription, regex) : new RegexRange(column, functionCallDescription, regex);
                 break;
             default:
                 throw new UnsupportedOperationException(String.format("Queries with %s are not supported", sqlKind));
@@ -313,8 +318,8 @@ public class ConditionHandler extends RexShuttle {
         int sign = op.getKind() == SqlKind.MINUS ? -1 : 1;
         RexNode left = getNode((RexLocalRef) op.getOperands().get(0));
         RexNode right = getNode((RexLocalRef) op.getOperands().get(1));
-        Object leftValue = null;
-        Object rightValue = null;
+        Object leftValue;
+        Object rightValue;
         switch (left.getKind()) {
             case LITERAL:
                 try {

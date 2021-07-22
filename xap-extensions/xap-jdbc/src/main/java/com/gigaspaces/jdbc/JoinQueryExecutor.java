@@ -34,7 +34,7 @@ public class JoinQueryExecutor {
         this.config.setJoinUsed(true);
         this.aggregationColumns = queryExecutor.getAggregationColumns();
         this.allQueryColumns = Stream.concat(visibleColumns.stream(), invisibleColumns.stream()).collect(Collectors.toList());
-        this.selectedQueryColumns = queryExecutor.getSelectedColumns();
+        this.selectedQueryColumns = queryExecutor.getSelectedColumns().isEmpty() ? this.visibleColumns : queryExecutor.getSelectedColumns();
     }
 
     public QueryResult execute() {
@@ -66,7 +66,8 @@ public class JoinQueryExecutor {
         if( groupByColumns.isEmpty()) {
             if( !aggregationColumns.isEmpty() ) {
                 List<TableRow> aggregateRows = new ArrayList<>();
-                aggregateRows.add(TableRowUtils.aggregate(res.getRows(), selectedQueryColumns, this.aggregationColumns, visibleColumns));
+                TableRow aggregatedRow = config.isCalcite() ? TableRowUtils.aggregate(res.getRows(), selectedQueryColumns) : TableRowUtils.aggregate(res.getRows(), selectedQueryColumns, this.aggregationColumns, visibleColumns);
+                aggregateRows.add(aggregatedRow);
                 res.setRows(aggregateRows);
             }
         }
@@ -76,7 +77,7 @@ public class JoinQueryExecutor {
                 Map<TableRowGroupByKey, List<TableRow>> groupByRowsResult = res.getGroupByRowsResult();
                 List<TableRow> totalAggregationsResultRowsList = new ArrayList<>();
                 for (List<TableRow> rowsList : groupByRowsResult.values()) {
-                    TableRow aggregatedRow = TableRowUtils.aggregate( rowsList, selectedQueryColumns, aggregationColumns, visibleColumns );
+                    TableRow aggregatedRow = config.isCalcite() ? TableRowUtils.aggregate(rowsList, selectedQueryColumns) : TableRowUtils.aggregate(rowsList, selectedQueryColumns, this.aggregationColumns, visibleColumns);
                     totalAggregationsResultRowsList.add( aggregatedRow );
                 }
                 res.setRows( totalAggregationsResultRowsList );

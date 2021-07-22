@@ -15,6 +15,7 @@ import com.gigaspaces.query.aggregators.*;
 import com.j_spaces.core.IJSpace;
 import com.j_spaces.core.client.Modifiers;
 import com.j_spaces.core.client.ReadModifiers;
+import com.j_spaces.jdbc.FunctionCallColumn;
 import com.j_spaces.jdbc.SQLUtil;
 import com.j_spaces.jdbc.builder.QueryTemplatePacket;
 import com.j_spaces.jdbc.builder.range.Range;
@@ -96,6 +97,10 @@ public class ConcreteTableContainer extends TableContainer {
             if (explainPlanImpl != null) {
                 queryResult = new ExplainPlanQueryResult(visibleColumns, explainPlanImpl.getExplainPlanInfo(), this);
             } else {
+                if(hasGroupByColumns() && !hasAggregationFunctions() && getGroupByColumns().size() != getProjectedColumns().size()){
+                    getProjectedColumns().clear();
+                    getProjectedColumns().addAll(getGroupByColumns());
+                }
                 queryResult = new ConcreteQueryResult(res, this);
                 if( hasGroupByColumns() && hasOrderColumns() ){
                     queryResult.sort();
@@ -158,7 +163,7 @@ public class ConcreteTableContainer extends TableContainer {
 
     private void setGroupByAggregation() {
         //groupBy in server
-        List<IQueryColumn> groupByColumns = getGroupByColumns();
+        List<IQueryColumn> groupByColumns = getGroupByColumns().stream().filter(qc -> !qc.isFunction()).collect(Collectors.toList());
         if(!groupByColumns.isEmpty()){
             int groupByColumnsCount = groupByColumns.size();
             String[] groupByColumnsArray = new String[ groupByColumnsCount ];
@@ -245,8 +250,14 @@ public class ConcreteTableContainer extends TableContainer {
             }
         }
 
-        for( IQueryColumn visibleColumn : getVisibleColumns() ){
-            aggregationSet = aggregationSet.add(new SingleValueAggregator().setPath(visibleColumn.getName()));
+        for( IQueryColumn visibleColumn : getVisibleColumns()){
+            if(visibleColumn.isFunction()){
+                FunctionCallColumn functionCallColumn = ((FunctionColumn) visibleColumn).toFunctionCallColumn();
+                aggregationSet = aggregationSet.add(new SingleValueFunctionAggregator(functionCallColumn).setPath(functionCallColumn.getName()));
+            }
+            else{
+                aggregationSet = aggregationSet.add(new SingleValueAggregator().setPath(visibleColumn.getName()));
+            }
         }
     }
 

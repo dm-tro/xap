@@ -62,13 +62,9 @@ public class QueryExecutor {
         }
         if (tables.size() == 1) { //Simple Query
             TableContainer singleTable = tables.get(0);
-            if(singleTable.hasGroupByColumns()){
-                singleTable.getVisibleColumns().clear();
-                singleTable.getVisibleColumns().addAll(singleTable.getGroupByColumns());
-            }
             QueryResult queryResult =  singleTable.executeRead(config);
             final List<IQueryColumn> selectedColumns = getSelectedColumns();
-            if(!selectedColumns.isEmpty() && config.isCalcite()){
+            if(!selectedColumns.isEmpty() && !selectedColumns.stream().allMatch(IQueryColumn::isAggregate) && config.isCalcite()){
                 if (config.isExplainPlan()) {
                     ExplainPlanQueryResult explainResult = ((ExplainPlanQueryResult) queryResult);
                     SubqueryExplainPlan subquery = new SubqueryExplainPlan(getSelectedColumns(),
@@ -198,21 +194,19 @@ public class QueryExecutor {
         this.caseColumns.add(caseColumn);
     }
 
-    public TableContainer getTableByColumnName(String name) {
-        TableContainer toReturn = null;
-        for(TableContainer tableContainer : getTables()) {
-            if(tableContainer.hasColumn(name)) {
-                if (toReturn == null) {
-                    toReturn = tableContainer;
-                } else {
-                    throw new IllegalArgumentException("Ambiguous column name [" + name + "]");
+    public TableContainer getTableByColumnName(String column){
+        TableContainer result = getTableByPhysicalColumnName(column);
+        if(result != null){
+            return result;
+        }
+        for (TableContainer table : tables) {
+            for (IQueryColumn queryColumn : table.getAllQueryColumns()) {
+                if(column.equals(queryColumn.getName()) || column.equals(queryColumn.getAlias())){
+                    return table;
                 }
             }
         }
-        if(toReturn == null){
-            throw new ColumnNotFoundException("Column " + name + " wasn't found in any table");
-        }
-        return toReturn;
+        throw new ColumnNotFoundException("Column " + column + " wasn't found in any table");
     }
 
     public IQueryColumn getColumnByColumnName(String column) {
@@ -244,5 +238,19 @@ public class QueryExecutor {
 
     public void addGroupByColumn(IQueryColumn groupByColumn){
         this.groupByColumns.add(groupByColumn);
+    }
+
+    public TableContainer getTableByPhysicalColumnName(String name) {
+        TableContainer toReturn = null;
+        for(TableContainer tableContainer : getTables()) {
+            if(tableContainer.hasColumn(name)) {
+                if (toReturn == null) {
+                    toReturn = tableContainer;
+                } else {
+                    throw new IllegalArgumentException("Ambiguous column name [" + name + "]");
+                }
+            }
+        }
+        return toReturn;
     }
 }

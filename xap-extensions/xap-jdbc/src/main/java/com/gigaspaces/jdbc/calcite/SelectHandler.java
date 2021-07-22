@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
+
 public class SelectHandler extends RelShuttleImpl {
     private final QueryExecutor queryExecutor;
     private final Map<RelNode, GSCalc> childToCalc = new HashMap<>();
@@ -107,7 +109,7 @@ public class SelectHandler extends RelShuttleImpl {
             for (RexLocalRef project : projectList) {
                 RexNode node = program.getExprList().get(project.getIndex());
                 if (node instanceof RexCall) {
-                    FunctionCallColumn functionCallColumn = getFunctionCallColumn(program, (RexCall) node);
+                    FunctionColumn functionCallColumn = getFunctionCallColumn(program, (RexCall) node);
                     queryExecutor.addColumn(functionCallColumn);
                     queryExecutor.addProjectedColumn(functionCallColumn);
                 }
@@ -115,7 +117,7 @@ public class SelectHandler extends RelShuttleImpl {
         }
     }
 
-    private FunctionCallColumn getFunctionCallColumn(RexProgram program, RexCall rexCall) {
+    private FunctionColumn getFunctionCallColumn(RexProgram program, RexCall rexCall) {
         SqlOperator sqlFunction = rexCall.op;
         List<IQueryColumn> params = new ArrayList<>();
         DateTypeResolver castType = new DateTypeResolver();
@@ -124,7 +126,7 @@ public class SelectHandler extends RelShuttleImpl {
                 RexNode funcArgument = program.getExprList().get(((RexLocalRef) operand).getIndex());
                 if (funcArgument.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) funcArgument;
-                    params.add(new LiteralColumn(CalciteUtils.getValue(literal, castType), -1, null, false));
+                    params.add(new LiteralColumn(CalciteUtils.getValue(literal, castType), EMPTY_ORDINAL, null, false));
                 } else if (funcArgument instanceof RexCall) { //operator
                     RexCall function= (RexCall) funcArgument;
                     params.add(getFunctionCallColumn(program, function));
@@ -132,7 +134,7 @@ public class SelectHandler extends RelShuttleImpl {
             }
 
         }
-        return new FunctionCallColumn(session, params, sqlFunction.getName(), null, null, true, -1, castType.getResolvedDateType());
+        return new FunctionColumn(session, params, sqlFunction.getName(), null, null, true, EMPTY_ORDINAL, castType.getResolvedDateType());
     }
 
     private void handleSort(GSSort sort) {
@@ -162,7 +164,7 @@ public class SelectHandler extends RelShuttleImpl {
     }
 
     private void handleAggregate(GSAggregate gsAggregate) {
-        AggregateHandler.instance().apply(gsAggregate, queryExecutor);
+        AggregateHandler.instance().apply(gsAggregate, queryExecutor, childToCalc.containsKey(gsAggregate));
         if(childToCalc.containsKey(gsAggregate)){
             handleCalcFromAggregate(childToCalc.get(gsAggregate));
         }
@@ -171,8 +173,7 @@ public class SelectHandler extends RelShuttleImpl {
     private void handleCalcFromAggregate(GSCalc other){
         RexProgram program = other.getProgram();
         List<String> outputFields = program.getOutputRowType().getFieldNames();
-        for (int i = 0; i < outputFields.size(); i++) {
-            String outputField = outputFields.get(i);
+        for (String outputField : outputFields) {
             if (other.equals(rootCalc)) {
                 IQueryColumn qc = queryExecutor.getColumnByColumnName(outputField);
                 if (qc != null) {
@@ -222,7 +223,7 @@ public class SelectHandler extends RelShuttleImpl {
     private void handleCalc(GSCalc other, TableContainer tableContainer) {
         RexProgram program = other.getProgram();
         List<String> inputFields = program.getInputRowType().getFieldNames();
-        new SingleTableProjectionHandler(session, program, tableContainer, other.equals(rootCalc), queryExecutor).project();
+        new SingleTableProjectionHandler(session, program, tableContainer, queryExecutor).project();
         ConditionHandler conditionHandler = new ConditionHandler(program, queryExecutor, inputFields, tableContainer);
         if (program.getCondition() != null) {
             program.getCondition().accept(conditionHandler);
@@ -263,7 +264,7 @@ public class SelectHandler extends RelShuttleImpl {
                         SqlFunction sqlFunction = (SqlFunction) call.op;
                         List<IQueryColumn> queryColumns = new ArrayList<>();
                         addQueryColumns(call, queryColumns, program, inputFields, outputFields, i);
-                        FunctionCallColumn functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), outputFields.get(i), true, i);
+                        FunctionColumn functionCallColumn = new FunctionColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), outputFields.get(i), true, i, call.getType().getFullTypeString());
                         queryExecutor.addColumn(functionCallColumn);
                         queryExecutor.addProjectedColumn(functionCallColumn);
                         break;
@@ -292,7 +293,6 @@ public class SelectHandler extends RelShuttleImpl {
     }
 
     private void addQueryColumns(RexCall call, List<IQueryColumn> queryColumns, RexProgram program, List<String> inputFields, List<String> outputFields, int index) {
-
         for (RexNode operand : call.getOperands()) {
             if (operand.isA(SqlKind.LOCAL_REF)) {
                 RexNode rexNode = program.getExprList().get(((RexLocalRef) operand).getIndex());

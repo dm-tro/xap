@@ -109,4 +109,9 @@ public class ConcreteColumn implements IQueryColumn {
         }
         return value;
     }
+
+    @Override
+    public IQueryColumn copy() {
+        return new ConcreteColumn(this.columnName, this.returnType, this.columnAlias, this.isVisible, this.tableContainer, this.columnOrdinal);
+    }
 }
