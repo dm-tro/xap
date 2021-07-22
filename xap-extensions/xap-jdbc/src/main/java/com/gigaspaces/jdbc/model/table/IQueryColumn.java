@@ -9,8 +9,6 @@ public interface IQueryColumn extends Comparable<IQueryColumn> {
 
     int getColumnOrdinal();
 
-    void setColumnOrdinal(int ordinal);
-
     String getName();
 
     String getAlias();

@@ -85,11 +85,6 @@ public class AggregationColumn implements IQueryColumn {
         return this.columnOrdinal;
     }
 
-    @Override
-    public void setColumnOrdinal(int ordinal) {
-        this.columnOrdinal = ordinal;
-    }
-
     public String getName() {
         return String.format("%s(%s)", getFunctionName(), getColumnName());
     }

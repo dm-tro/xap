@@ -29,11 +29,6 @@ public class ConcreteColumn implements IQueryColumn {
     }
 
     @Override
-    public void setColumnOrdinal(int ordinal) {
-        this.columnOrdinal = ordinal;
-    }
-
-    @Override
     public String getName() {
         return columnName;
     }

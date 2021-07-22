@@ -56,11 +56,6 @@ public class FunctionCallColumn implements IQueryColumn {
     }
 
     @Override
-    public void setColumnOrdinal(int ordinal) {
-        this.columnOrdinal = ordinal;
-    }
-
-    @Override
     public String getName() {
         return functionName + "(" + String.join(", ", params.stream().map(IQueryColumn::getName).collect(Collectors.toList())) + ")";
     }
