@@ -114,7 +114,7 @@ public class TableRow implements Comparable<TableRow> {
             orderValues[i] = orderColumns.get(i).getCurrentValue();
         }
 
-        this.groupByColumns = groupByColumns.toArray(new ConcreteColumn[0]);
+        this.groupByColumns = groupByColumns.toArray(new IQueryColumn[0]);
         groupByValues = new Object[this.groupByColumns.length];
         for (int i = 0; i < groupByColumns.size(); i++) {
             groupByValues[i] = groupByColumns.get(i).getCurrentValue();
@@ -135,7 +135,7 @@ public class TableRow implements Comparable<TableRow> {
                                         aggregationColumn.getQueryColumn().getColumnOrdinal() );
 
                 this.columns[i] = column;
-                this.values[i] = row.getPropertyValue(column.getAlias());
+                this.values[i] = row.getPropertyValue(column.getName());
             }
             else{
                 this.values[i] = row.getPropertyValue(this.columns[i]);
@@ -148,7 +148,7 @@ public class TableRow implements Comparable<TableRow> {
             this.orderValues[i] = row.getPropertyValue(this.orderColumns[i].getName());
         }
 
-        this.groupByColumns = tempTableContainer.getGroupByColumns().toArray(new ConcreteColumn[0]);
+        this.groupByColumns = tempTableContainer.getGroupByColumns().toArray(new IQueryColumn[0]);
         this.groupByValues = new Object[this.groupByColumns.length];
         for (int i = 0; i < this.groupByColumns.length; i++) {
             this.groupByValues[i] = row.getPropertyValue(this.groupByColumns[i].getName());
@@ -159,7 +159,7 @@ public class TableRow implements Comparable<TableRow> {
         this.columns = queryExecutor.getSelectedColumns().toArray(new IQueryColumn[0]);
         this.values = new Object[this.columns.length];
         for (int i = 0; i < this.columns.length; i++) {
-            this.values[i] = row.getPropertyValue(this.columns[i].getName());
+            this.values[i] = row.getPropertyValue(this.columns[i].getAlias());
         }
 
         this.orderColumns = queryExecutor.getOrderColumns().toArray(new OrderColumn[0]);
@@ -168,10 +168,10 @@ public class TableRow implements Comparable<TableRow> {
             this.orderValues[i] = row.getPropertyValue(this.orderColumns[i].getName());
         }
 
-        this.groupByColumns = queryExecutor.getGroupByColumns().toArray(new ConcreteColumn[0]);
+        this.groupByColumns = queryExecutor.getGroupByColumns().toArray(new IQueryColumn[0]);
         this.groupByValues = new Object[this.groupByColumns.length];
         for (int i = 0; i < this.groupByColumns.length; i++) {
-            this.groupByValues[i] = row.getPropertyValue(this.groupByColumns[i].getName());
+            this.groupByValues[i] = row.getPropertyValue(this.groupByColumns[i].getAlias());
         }
     }
 

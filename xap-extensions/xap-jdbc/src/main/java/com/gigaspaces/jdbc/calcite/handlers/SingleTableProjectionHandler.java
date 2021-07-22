@@ -36,9 +36,9 @@ public class SingleTableProjectionHandler extends RexShuttle {
         for (int i = 0; i < projects.size(); i++) {
             RexLocalRef localRef = projects.get(i);
             RexNode node = program.getExprList().get(localRef.getIndex());
+            String alias = outputFields.get(i);
             if(node.isA(SqlKind.INPUT_REF)){
                 RexInputRef inputRef = (RexInputRef) node;
-                String alias = outputFields.get(i);
                 String originalName = inputFields.get(inputRef.getIndex());
                 if(!originalName.startsWith("EXPR"))
                     tableContainer.addQueryColumn(originalName, alias, true, isRoot ? i : 0);
@@ -53,20 +53,14 @@ public class SingleTableProjectionHandler extends RexShuttle {
                     case OTHER_FUNCTION:
                         sqlFunction = (SqlFunction) call.op;
                         addQueryColumns(call, queryColumns, inputFields, outputFields, i);
-                        functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, isRoot, -1);
-                        if(isRoot)
-                            tableContainer.getVisibleColumns().add(functionCallColumn);
-                        else
-                            tableContainer.getInvisibleColumns().add(functionCallColumn);
+                        functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), alias, true, -1);
+                        tableContainer.addQueryColumn(functionCallColumn);
                         break;
                     case CAST:
                         sqlFunction = (SqlCastFunction) call.op;
                         addQueryColumns(call, queryColumns, inputFields, outputFields, i);
-                        functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), null, isRoot, -1, call.getType().getFullTypeString());
-                        if(isRoot)
-                            tableContainer.getVisibleColumns().add(functionCallColumn);
-                        else
-                            tableContainer.getInvisibleColumns().add(functionCallColumn);
+                        functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), alias, true, -1, call.getType().getFullTypeString());
+                        tableContainer.addQueryColumn(functionCallColumn);
                         break;
                     case CASE:
                         CaseColumn caseColumn = new CaseColumn(outputFields.get(i), CalciteUtils.getJavaType(call), i);
@@ -81,11 +75,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
             else if(node.isA(SqlKind.LITERAL)){
                 RexLiteral literal = (RexLiteral) node;
                 LiteralColumn literalColumn = new LiteralColumn(CalciteUtils.getValue(literal), i, outputFields.get(i));
-                if(isRoot) {
-                    tableContainer.getVisibleColumns().add(literalColumn);
-                } else {
-                    tableContainer.getInvisibleColumns().add(literalColumn);
-                }
+                tableContainer.addQueryColumn(literalColumn);
             }
         }
     }

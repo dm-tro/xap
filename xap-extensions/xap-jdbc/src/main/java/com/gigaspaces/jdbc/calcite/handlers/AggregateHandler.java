@@ -2,7 +2,6 @@ package com.gigaspaces.jdbc.calcite.handlers;
 
 import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.calcite.GSAggregate;
-import com.gigaspaces.jdbc.calcite.GSCalc;
 import com.gigaspaces.jdbc.model.table.*;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
@@ -11,8 +10,6 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
 
 public class AggregateHandler {
     private static AggregateHandler _instance;
@@ -39,11 +36,11 @@ public class AggregateHandler {
                 groupSet.forEach(index -> {
                     String columnName = fields.get(index);
                     TableContainer table = queryExecutor.isJoinQuery() ? queryExecutor.getTableByColumnIndex(index) : queryExecutor.getTableByColumnName(columnName);
-                    final IQueryColumn queryColumn = queryExecutor.getColumnByColumnIndex(index);
+                    IQueryColumn queryColumn = queryExecutor.getColumnByColumnIndex(index);
                     if(queryColumn == null){
-                        table.addQueryColumn(columnName, null, true, columnCounter.getAndIncrement());
+                        queryColumn = table.addQueryColumn(columnName, null, true, columnCounter.getAndIncrement());
                     }
-                    IQueryColumn groupByColumn = new ConcreteColumn(queryColumn == null ? columnName : queryColumn.getName(), null, null, true, table, columnCounter.get());
+                    IQueryColumn groupByColumn = queryColumn.copy();
                     table.addGroupByColumns(groupByColumn);
                 });
         }
@@ -64,7 +61,7 @@ public class AggregateHandler {
                     throw new IllegalArgumentException("Wrong number of arguments to aggregation function ["
                             + aggregationFunctionType + "()], expected 1 column but was '*'");
                 }
-                aggregationColumn = new AggregationColumn(aggregationFunctionType, String.format("%s(%s)", aggregateCall.getAggregation().getName().toLowerCase(Locale.ROOT), column), null, true, true, columnCounter.getAndIncrement());
+                aggregationColumn = new AggregationColumn(aggregationFunctionType, getFunctionAlias(aggregateCall, column), null, true, true, columnCounter.getAndIncrement());
                 queryExecutor.getTables().forEach(tableContainer -> tableContainer.addAggregationColumn(aggregationColumn));
                 queryExecutor.getTables().forEach(t -> t.getAllColumnNames().forEach(columnName -> {
                     IQueryColumn qc = t.addQueryColumnWithoutOrdinal(columnName, null, false);
@@ -84,6 +81,8 @@ public class AggregateHandler {
     }
 
     private String getFunctionAlias(AggregateCall call, String column){
+        if(!call.getName().startsWith("EXPR$"))
+            return call.getName();
         return String.format("%s(%s)", call.getAggregation().getName().toLowerCase(Locale.ROOT), column);
     }
 }

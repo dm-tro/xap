@@ -170,7 +170,9 @@ public class SelectHandler extends RelShuttleImpl {
             String outputField = outputFields.get(i);
             if(!outputField.startsWith("EXPR") && other.equals(rootCalc)){
                 IQueryColumn qc = queryExecutor.getColumnByColumnName(outputField);
-                queryExecutor.addColumn(qc);
+                if(qc != null){
+                    queryExecutor.addColumn(qc, true);
+                }
             }
         }
         if (program.getCondition() != null) {

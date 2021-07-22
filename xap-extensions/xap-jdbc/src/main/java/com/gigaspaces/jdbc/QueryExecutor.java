@@ -53,6 +53,7 @@ public class QueryExecutor {
             if(singleTable.hasGroupByColumns()){
                 singleTable.getVisibleColumns().clear();
                 singleTable.getVisibleColumns().addAll(singleTable.getGroupByColumns());
+                getGroupByColumns().addAll(singleTable.getGroupByColumns());
             }
             QueryResult queryResult =  singleTable.executeRead(config);
             queryResult.addCaseColumnsToResults(caseColumns);
@@ -149,6 +150,75 @@ public class QueryExecutor {
         this.aggregationColumns.add(aggregationColumn);
     }
 
+    private void addFieldCount(int size) {
+        int columnCount = fieldCountList.isEmpty() ?  size: fieldCountList.getLast() + size;
+        fieldCountList.add(columnCount);
+    }
+
+    public void addCaseColumn(CaseColumn caseColumn) {
+        this.caseColumns.add(caseColumn);
+    }
+
+    public List<IQueryColumn> getSelectedColumns(){
+        return Stream.concat(getVisibleColumns().stream(), getAggregationColumns().stream()).sorted().collect(Collectors.toList());
+    }
+
+    public List<IQueryColumn> getOrderColumns() {
+        List<IQueryColumn> result = new ArrayList<>();
+        tables.forEach(table -> result.addAll(table.getOrderColumns()));
+        return result;
+    }
+
+    public List<IQueryColumn> getGroupByColumns() {
+        return this.groupByColumns;
+    }
+
+    public void addGroupByColumn(IQueryColumn groupByColumn){
+        this.groupByColumns.add(groupByColumn);
+    }
+
+    public TableContainer getTableByPhysicalColumnName(String name) {
+        TableContainer toReturn = null;
+        for(TableContainer tableContainer : getTables()) {
+            if(tableContainer.hasColumn(name)) {
+                if (toReturn == null) {
+                    toReturn = tableContainer;
+                } else {
+                    throw new IllegalArgumentException("Ambiguous column name [" + name + "]");
+                }
+            }
+        }
+        return toReturn;
+    }
+
+    public IQueryColumn getColumnByColumnName(String column) {
+        for (TableContainer table : tables) {
+            for (IQueryColumn queryColumn : table.getAllQueryColumns()) {
+                if(column.equals(queryColumn.getName()) || column.equals(queryColumn.getAlias())){
+                    return queryColumn;
+                }
+            }
+        }
+        return null;
+//        throw new ColumnNotFoundException("Column " + column + " wasn't found in any table");
+    }
+
+    public TableContainer getTableByColumnName(String column){
+        TableContainer result = getTableByPhysicalColumnName(column);
+        if(result != null){
+            return result;
+        }
+        for (TableContainer table : tables) {
+            for (IQueryColumn queryColumn : table.getAllQueryColumns()) {
+                if(column.equals(queryColumn.getName()) || column.equals(queryColumn.getAlias())){
+                    return table;
+                }
+            }
+        }
+        throw new ColumnNotFoundException("Column " + column + " wasn't found in any table");
+    }
+
+
     public TableContainer getTableByColumnIndex(int columnIndex){
         initFieldCount();
         for (int i = 0; i < fieldCountList.size(); i++) {
@@ -179,55 +249,5 @@ public class QueryExecutor {
                 addFieldCount(fieldCount);
             }
         }
-    }
-
-
-    private void addFieldCount(int size) {
-        int columnCount = fieldCountList.isEmpty() ?  size: fieldCountList.getLast() + size;
-        fieldCountList.add(columnCount);
-    }
-
-    public void addCaseColumn(CaseColumn caseColumn) {
-        this.caseColumns.add(caseColumn);
-    }
-
-    public TableContainer getTableByColumnName(String name) {
-        TableContainer toReturn = null;
-        for(TableContainer tableContainer : getTables()) {
-            if(tableContainer.hasColumn(name)) {
-                if (toReturn == null) {
-                    toReturn = tableContainer;
-                } else {
-                    throw new IllegalArgumentException("Ambiguous column name [" + name + "]");
-                }
-            }
-        }
-        if(toReturn == null){
-            throw new ColumnNotFoundException("Column " + name + " wasn't found in any table");
-        }
-        return toReturn;
-    }
-
-    public IQueryColumn getColumnByColumnName(String column) {
-        TableContainer tableContainer = getTableByColumnName(column);
-        return tableContainer.getAllQueryColumns().stream().filter(qc -> qc.getName().equals(column)).findFirst().orElse(null);
-    }
-
-    public List<IQueryColumn> getSelectedColumns(){
-        return Stream.concat(getVisibleColumns().stream(), getAggregationColumns().stream()).sorted().collect(Collectors.toList());
-    }
-
-    public List<IQueryColumn> getOrderColumns() {
-        List<IQueryColumn> result = new ArrayList<>();
-        tables.forEach(table -> result.addAll(table.getOrderColumns()));
-        return result;
-    }
-
-    public List<IQueryColumn> getGroupByColumns() {
-        return this.groupByColumns;
-    }
-
-    public void addGroupByColumn(IQueryColumn groupByColumn){
-        this.groupByColumns.add(groupByColumn);
     }
 }

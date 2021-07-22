@@ -9,6 +9,7 @@ import net.sf.jsqlparser.expression.Expression;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,6 +27,15 @@ public abstract class TableContainer {
     public abstract QueryResult executeRead(QueryExecutionConfig config) throws SQLException;
 
     public abstract IQueryColumn addQueryColumn(String columnName, String columnAlias, boolean isVisible, int columnOrdinal);
+
+    public void addQueryColumn(IQueryColumn queryColumn) {
+        if(queryColumn.isVisible()){
+            getVisibleColumns().add(queryColumn);
+        }
+        else{
+            getInvisibleColumns().add(queryColumn);
+        }
+    }
 
     public abstract List<IQueryColumn> getVisibleColumns();
 

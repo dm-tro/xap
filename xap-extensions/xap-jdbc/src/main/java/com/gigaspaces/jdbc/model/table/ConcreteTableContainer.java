@@ -109,7 +109,7 @@ public class ConcreteTableContainer extends TableContainer {
     }
 
     private String[] createProjectionTable() {
-        return Stream.concat(visibleColumns.stream(), invisibleColumns.stream()).map(IQueryColumn::getName).distinct().toArray(String[]::new);
+        return Stream.concat(visibleColumns.stream().filter(qc -> !qc.isFunction()), invisibleColumns.stream()).map(IQueryColumn::getName).distinct().toArray(String[]::new);
     }
 
     private void setAggregations(boolean isJoinUsed) {
@@ -159,7 +159,7 @@ public class ConcreteTableContainer extends TableContainer {
 
     private void setGroupByAggregation() {
         //groupBy in server
-        List<IQueryColumn> groupByColumns = getGroupByColumns();
+        List<IQueryColumn> groupByColumns = getGroupByColumns().stream().filter(qc -> !qc.isFunction()).collect(Collectors.toList());
         if(!groupByColumns.isEmpty()){
             int groupByColumnsCount = groupByColumns.size();
             String[] groupByColumnsArray = new String[ groupByColumnsCount ];
@@ -247,6 +247,9 @@ public class ConcreteTableContainer extends TableContainer {
         }
 
         for( IQueryColumn visibleColumn : getVisibleColumns() ){
+            if(visibleColumn.isFunction()){
+                continue;
+            }
             aggregationSet = aggregationSet.add(new SingleValueAggregator().setPath(visibleColumn.getName()));
         }
     }

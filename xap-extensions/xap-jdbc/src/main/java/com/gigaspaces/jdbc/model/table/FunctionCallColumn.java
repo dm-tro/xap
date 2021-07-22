@@ -316,4 +316,14 @@ public class FunctionCallColumn implements IQueryColumn {
     public String toString() {
         return getAlias();
     }
+
+    @Override
+    public IQueryColumn copy() {
+        return new FunctionCallColumn(this.session, this.params, this.functionName, this.columnName, this.columnAlias, this.isVisible, this.columnOrdinal, this.type);
+    }
+
+    @Override
+    public boolean isFunction() {
+        return true;
+    }
 }
