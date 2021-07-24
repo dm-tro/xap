@@ -12,6 +12,8 @@ import org.apache.calcite.sql.fun.SqlCastFunction;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
+
 public class SingleTableProjectionHandler extends RexShuttle {
     private final RexProgram program;
     private final TableContainer tableContainer;
@@ -56,7 +58,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
                         sqlFunction = (SqlFunction) call.op;
                         addQueryColumns(call, queryColumns, inputFields, outputFields, i);
                         functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(),
-                                sqlFunction.toString(), null, isRoot, -1);
+                                sqlFunction.toString(), null, isRoot, EMPTY_ORDINAL);
                         if(isRoot) {
                             tableContainer.getVisibleColumns().add(functionCallColumn);
                             tableContainer.addProjectedColumn(functionCallColumn);
@@ -68,7 +70,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
                         sqlFunction = (SqlCastFunction) call.op;
                         addQueryColumns(call, queryColumns, inputFields, outputFields, i);
                         functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(),
-                                sqlFunction.toString(), null, isRoot, -1, call.getType().getFullTypeString());
+                                sqlFunction.toString(), null, isRoot, EMPTY_ORDINAL, call.getType().getFullTypeString());
                         if(isRoot) {
                             tableContainer.addProjectedColumn(functionCallColumn);
                             tableContainer.getVisibleColumns().add(functionCallColumn);
@@ -78,7 +80,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
                         }
                         break;
                     case CASE:
-                        CaseColumn caseColumn = new CaseColumn(outputFields.get(i), CalciteUtils.getJavaType(call), -1);
+                        CaseColumn caseColumn = new CaseColumn(outputFields.get(i), CalciteUtils.getJavaType(call), EMPTY_ORDINAL);
                         addCaseCondition(call, caseColumn);
                         tableContainer.addProjectedColumn(caseColumn);
                         break;
@@ -89,7 +91,7 @@ public class SingleTableProjectionHandler extends RexShuttle {
             }
             else if(node.isA(SqlKind.LITERAL)){
                 RexLiteral literal = (RexLiteral) node;
-                LiteralColumn literalColumn = new LiteralColumn(CalciteUtils.getValue(literal),-1, outputFields.get(i), true);
+                LiteralColumn literalColumn = new LiteralColumn(CalciteUtils.getValue(literal), EMPTY_ORDINAL, outputFields.get(i), true);
                 if(isRoot) {
                     tableContainer.addProjectedColumn(literalColumn);
                     tableContainer.getVisibleColumns().add(literalColumn);

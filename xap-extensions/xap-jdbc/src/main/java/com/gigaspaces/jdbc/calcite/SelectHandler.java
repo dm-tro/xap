@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
+
 public class SelectHandler extends RelShuttleImpl {
     private final QueryExecutor queryExecutor;
     private final Map<RelNode, GSCalc> childToCalc = new HashMap<>();
@@ -124,7 +126,7 @@ public class SelectHandler extends RelShuttleImpl {
                 RexNode funcArgument = program.getExprList().get(((RexLocalRef) operand).getIndex());
                 if (funcArgument.isA(SqlKind.LITERAL)) {
                     RexLiteral literal = (RexLiteral) funcArgument;
-                    params.add(new LiteralColumn(CalciteUtils.getValue(literal, castType), -1, null, false));
+                    params.add(new LiteralColumn(CalciteUtils.getValue(literal, castType), EMPTY_ORDINAL, null, false));
                 } else if (funcArgument instanceof RexCall) { //operator
                     RexCall function= (RexCall) funcArgument;
                     params.add(getFunctionCallColumn(program, function));
@@ -132,7 +134,7 @@ public class SelectHandler extends RelShuttleImpl {
             }
 
         }
-        return new FunctionCallColumn(session, params, sqlFunction.getName(), null, null, true, -1, castType.getResolvedDateType());
+        return new FunctionCallColumn(session, params, sqlFunction.getName(), null, null, true, EMPTY_ORDINAL, castType.getResolvedDateType());
     }
 
     private void handleSort(GSSort sort) {

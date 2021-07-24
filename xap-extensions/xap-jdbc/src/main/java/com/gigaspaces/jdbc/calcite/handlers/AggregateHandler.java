@@ -10,6 +10,8 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.List;
 import java.util.Locale;
 
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
+
 public class AggregateHandler {
     private static AggregateHandler _instance;
 
@@ -34,16 +36,15 @@ public class AggregateHandler {
             groupSet.forEach(index -> {
                 String columnName = fields.get(index);
                 TableContainer table = queryExecutor.isJoinQuery() ? queryExecutor.getTableByColumnIndex(index) : queryExecutor.getTableByColumnName(columnName);
-                final IQueryColumn queryColumn = queryExecutor.isJoinQuery() ? queryExecutor.getColumnByColumnIndex(index) : queryExecutor.getColumnByColumnName(columnName);
+                IQueryColumn queryColumn = queryExecutor.isJoinQuery() ? queryExecutor.getColumnByColumnIndex(index) : queryExecutor.getColumnByColumnName(columnName);
                 if (queryColumn == null) {
-                    IQueryColumn qc = table.addQueryColumnWithoutOrdinal(columnName, null, true);
-                    table.addProjectedColumn(qc);
+                    queryColumn = table.addQueryColumnWithoutOrdinal(columnName, null, true);
+                    table.addProjectedColumn(queryColumn);
                     if(!hasCalc){
-                        queryExecutor.addProjectedColumn(qc);
+                        queryExecutor.addProjectedColumn(queryColumn);
                     }
                 }
-                IQueryColumn groupByColumn = new ConcreteColumn(queryColumn == null ? columnName :
-                        queryColumn.getName(), null, null, true, table, -1);
+                IQueryColumn groupByColumn = new ConcreteColumn(queryColumn.getName(), null, null, true, table, EMPTY_ORDINAL);
                 table.addGroupByColumns(groupByColumn);
             });
         }
@@ -64,7 +65,7 @@ public class AggregateHandler {
                             + aggregationFunctionType + "()], expected 1 column but was '*'");
                 }
                 aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), null,
-                        true, true, -1);
+                        true, true, EMPTY_ORDINAL);
                 queryExecutor.getTables().forEach(tableContainer -> {
                     tableContainer.addAggregationColumn(aggregationColumn);
                     tableContainer.addProjectedColumn(aggregationColumn);
@@ -79,7 +80,7 @@ public class AggregateHandler {
                 final IQueryColumn queryColumn = queryExecutor.isJoinQuery() ? queryExecutor.getColumnByColumnIndex(index) : table.addQueryColumnWithoutOrdinal(column, null, false);
                 queryExecutor.addColumn(queryColumn, false);
                 aggregationColumn = new AggregationColumn(aggregationFunctionType, aggregateCall.getName(), queryColumn, true
-                        , false, -1);
+                        , false, EMPTY_ORDINAL);
                 table.addAggregationColumn(aggregationColumn);
                 table.addProjectedColumn(aggregationColumn);
             }

@@ -19,6 +19,8 @@ import org.apache.calcite.sql.SqlKind;
 
 import java.sql.SQLException;
 
+import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
+
 public class JoinConditionHandler {
     private final GSJoin join;
     private final QueryExecutor queryExecutor;
@@ -163,7 +165,7 @@ public class JoinConditionHandler {
                 }
                 joinInfo.addJoinCondition(OperatorJoinCondition.getConditionOperator(rexCall.getKind(), 2));
                 joinInfo.addJoinCondition(new ColumnValueJoinCondition(column));
-                joinInfo.addJoinCondition(new ColumnValueJoinCondition(new LiteralColumn(literalValue, -1, null, false)));
+                joinInfo.addJoinCondition(new ColumnValueJoinCondition(new LiteralColumn(literalValue, EMPTY_ORDINAL, null, false)));
                 return table; //TODO: @sagiv not good!. not the left always
             }
             case OR:
