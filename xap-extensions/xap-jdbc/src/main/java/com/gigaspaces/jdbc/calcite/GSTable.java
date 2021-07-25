@@ -1,6 +1,5 @@
 package com.gigaspaces.jdbc.calcite;
 
-import com.gigaspaces.entry.CompoundSpaceId;
 import com.gigaspaces.internal.metadata.ITypeDesc;
 import com.gigaspaces.internal.metadata.PropertyInfo;
 import org.apache.calcite.rel.type.RelDataType;
@@ -72,12 +71,9 @@ public class GSTable extends AbstractTable {
             return SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
         } else if (clazz.isArray() ){
             return SqlTypeName.ARRAY;
-        } else if (CompoundSpaceId.class.isAssignableFrom(clazz)){
-            return SqlTypeName.ANY;
         }
 
-
-        throw new UnsupportedOperationException("Unsupported type: " + clazz);
+        return SqlTypeName.ANY;
     }
 
     @Override
