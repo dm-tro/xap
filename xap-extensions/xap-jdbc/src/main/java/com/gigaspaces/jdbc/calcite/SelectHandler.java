@@ -38,10 +38,6 @@ public class SelectHandler extends RelShuttleImpl {
         this.session = session;
     }
 
-    public GSCalc getRootCalc() {
-        return rootCalc;
-    }
-
     @Override
     // TODO check inserting of same table
     public RelNode visit(TableScan scan) {
