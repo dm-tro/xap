@@ -6,10 +6,6 @@ import java.util.Properties;
 
 public class CalciteDefaults {
 
-
-    public static final String DRIVER_KEY = SystemProperties.JDBC_DRIVER;
-    public static final String DRIVER_VALUE = SystemProperties.JDBC_V3_DRIVER;
-
     public static final String SUPPORT_INEQUALITY = "com.gs.jdbc.v3.support.inequality";
     public static final String SUPPORT_SEMICOLON_SEPARATOR = "com.gs.jdbc.v3.support.semicolon_separator";
     public static final String SUPPORT_ROWNUM = "com.gs.jdbc.v3.support.rownum";
@@ -17,7 +13,7 @@ public class CalciteDefaults {
 
 
     public static boolean isCalciteDriverPropertySet() {
-        return DRIVER_VALUE.equals(System.getProperty(DRIVER_KEY));
+        return SystemProperties.JDBC_V3_DRIVER.equals(System.getProperty(SystemProperties.JDBC_DRIVER));
     }
 
     public static boolean isCalcitePropertySet(String key, Properties properties) {
@@ -30,6 +26,6 @@ public class CalciteDefaults {
     }
 
     public static void setCalciteDriverSystemProperty() {
-        System.setProperty(DRIVER_KEY, DRIVER_VALUE);
+        System.setProperty(SystemProperties.JDBC_DRIVER, SystemProperties.JDBC_V3_DRIVER);
     }
 }
