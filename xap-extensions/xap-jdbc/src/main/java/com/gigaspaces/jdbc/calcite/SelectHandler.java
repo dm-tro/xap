@@ -274,6 +274,16 @@ public class SelectHandler extends RelShuttleImpl {
                         queryExecutor.addProjectedColumn(column);
                         break;
                     }
+                    case MINUS:
+                    case PLUS: {
+                        RexCall call = (RexCall)node;
+                        List<IQueryColumn> queryColumns = new ArrayList<>();
+                        addQueryColumns(call, queryColumns, program, inputFields, outputFields, i);
+                        FunctionCallColumn functionCallColumn = new FunctionCallColumn(session, queryColumns, call.getKind().name(), call.getKind().name(), outputFields.get(i), true, i, call.getOperands().get(1).getType().getSqlTypeName().name());
+                        queryExecutor.addColumn(functionCallColumn);
+                        queryExecutor.addProjectedColumn(functionCallColumn);
+                        break;
+                    }
                     default:
                         throw new UnsupportedOperationException("Unexpected node kind expected CASE / INPUT_REF but was [" + node.getKind() + "]");
                 }

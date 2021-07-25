@@ -262,7 +262,7 @@ public class ConditionHandler extends RexShuttle {
                 break;
             case MINUS:
             case PLUS:
-                value = handleMinusOperation((RexCall)rightOp);
+                value = handleArithmeticOperation((RexCall)rightOp);
                 break;
             default:
                 throw new UnsupportedOperationException(String.format("Queries with %s are not supported", sqlKind));
@@ -309,7 +309,7 @@ public class ConditionHandler extends RexShuttle {
         qtpMap.put(table, table.createQueryTemplatePacketWithRange(range));
     }
 
-    private Object handleMinusOperation(RexCall op) {
+    private Object handleArithmeticOperation(RexCall op) {
         int sign = op.getKind() == SqlKind.MINUS ? -1 : 1;
         RexNode left = getNode((RexLocalRef) op.getOperands().get(0));
         RexNode right = getNode((RexLocalRef) op.getOperands().get(1));

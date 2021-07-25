@@ -55,6 +55,8 @@ public class SQLFunctionsExtended {
         functions.put("GENERATE_SERIES", new UnsupportedSqlFunction("GENERATE_SERIES"));
         functions.put("PG_GET_EXPR", new PgGetExprSqlFunction());
         functions.put("EXTRACT", new ExtractSqlFunction());
+        functions.put("MINUS", new MinusSqlFunction());
+        functions.put("PLUS", new PlusSqlFunction());
     }
 
     public static Map<String, SqlFunction> getFunctions() {
