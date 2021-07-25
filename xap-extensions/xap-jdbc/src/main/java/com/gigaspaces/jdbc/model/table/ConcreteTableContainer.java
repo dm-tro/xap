@@ -8,7 +8,6 @@ import com.gigaspaces.internal.transport.ProjectionTemplate;
 import com.gigaspaces.jdbc.exceptions.ColumnNotFoundException;
 import com.gigaspaces.jdbc.exceptions.TypeNotFoundException;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
-import com.gigaspaces.jdbc.model.join.JoinInfo;
 import com.gigaspaces.jdbc.model.result.ConcreteQueryResult;
 import com.gigaspaces.jdbc.model.result.ExplainPlanQueryResult;
 import com.gigaspaces.jdbc.model.result.QueryResult;
@@ -253,12 +252,14 @@ public class ConcreteTableContainer extends TableContainer {
 
     @Override
     public IQueryColumn addQueryColumn(String columnName, String columnAlias, boolean isVisible, int columnOrdinal) {
-        if (!columnName.equalsIgnoreCase(IQueryColumn.UUID_COLUMN) && typeDesc.getFixedPropertyPositionIgnoreCase(columnName) == -1) {
+        final boolean isUidColumn = columnName.equalsIgnoreCase(IQueryColumn.UUID_COLUMN);
+        if (!isUidColumn && typeDesc.getFixedPropertyPositionIgnoreCase(columnName) == -1) {
             throw new ColumnNotFoundException("Could not find column with name [" + columnName + "]");
         }
 
         try {
-            ConcreteColumn concreteColumn = new ConcreteColumn(columnName, SQLUtil.getPropertyType(typeDesc, columnName), columnAlias,
+            final Class<?> propertyType = isUidColumn ? String.class : SQLUtil.getPropertyType(typeDesc, columnName);
+            ConcreteColumn concreteColumn = new ConcreteColumn(columnName, propertyType, columnAlias,
                     isVisible, this, columnOrdinal);
             if (isVisible) {
                 this.visibleColumns.add(concreteColumn);
