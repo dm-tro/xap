@@ -39,9 +39,9 @@ public class AggregateHandler {
                 if (queryColumn == null) {
                     queryColumn = table.addQueryColumnWithoutOrdinal(columnName, null, true);
                     table.addProjectedColumn(queryColumn);
-//                    if(!hasCalc){
-//                        queryExecutor.addProjectedColumn(queryColumn);
-//                    }
+                    if(!hasCalc){
+                        queryExecutor.addProjectedColumn(queryColumn);
+                    }
                 }
                 IQueryColumn groupByColumn = new ConcreteColumn(queryColumn.getName(), null, null, true, table, EMPTY_ORDINAL);
                 table.addGroupByColumns(groupByColumn);
