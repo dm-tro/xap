@@ -8,7 +8,6 @@ import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.List;
-import java.util.Locale;
 
 import static com.gigaspaces.jdbc.model.table.IQueryColumn.EMPTY_ORDINAL;
 
@@ -40,9 +39,9 @@ public class AggregateHandler {
                 if (queryColumn == null) {
                     queryColumn = table.addQueryColumnWithoutOrdinal(columnName, null, true);
                     table.addProjectedColumn(queryColumn);
-                    if(!hasCalc){
-                        queryExecutor.addProjectedColumn(queryColumn);
-                    }
+//                    if(!hasCalc){
+//                        queryExecutor.addProjectedColumn(queryColumn);
+//                    }
                 }
                 IQueryColumn groupByColumn = new ConcreteColumn(queryColumn.getName(), null, null, true, table, EMPTY_ORDINAL);
                 table.addGroupByColumns(groupByColumn);
