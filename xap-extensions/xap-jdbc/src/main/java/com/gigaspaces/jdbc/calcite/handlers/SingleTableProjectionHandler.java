@@ -84,6 +84,19 @@ public class SingleTableProjectionHandler extends RexShuttle {
                         addCaseCondition(call, caseColumn);
                         tableContainer.addProjectedColumn(caseColumn);
                         break;
+                    case MINUS:
+                    case PLUS: {
+                        addQueryColumns(call, queryColumns, inputFields, outputFields, i);
+                        functionCallColumn = new FunctionCallColumn(session, queryColumns, call.getKind().name(), call.getKind().name(),
+                                outputFields.get(i), true, i, call.getOperands().get(1).getType().getSqlTypeName().name());
+                        if(isRoot) {
+                            tableContainer.getVisibleColumns().add(functionCallColumn);
+                            tableContainer.addProjectedColumn(functionCallColumn);
+                        }
+                        else
+                            tableContainer.getInvisibleColumns().add(functionCallColumn);
+                        break;
+                    }
                     default:
                         throw new UnsupportedOperationException("call of kind " + call.getKind() + " is not supported");
 
