@@ -282,7 +282,7 @@ public class QueryProviderImpl implements QueryProvider {
         }
 
         if (statement instanceof ExplainStatement) {
-            return prepareExplain(name, (ExplainStatement) statement, formatCodes, query);
+            return prepareExplain(session, name, (ExplainStatement) statement, params, formatCodes, query);
         }
 
         if (query.isA(SqlKind.QUERY)) {
@@ -293,11 +293,14 @@ public class QueryProviderImpl implements QueryProvider {
     }
 
     @NotNull
-    private QueryPortal<Object[]> prepareExplain(String name, ExplainStatement statement, int[] formatCodes, SqlNode query) throws NonBreakingException {
+    private QueryPortal<Object[]> prepareExplain(Session session, String name, ExplainStatement statement, Object[] params, int[] formatCodes, SqlNode query) throws NonBreakingException {
         try {
             ThrowingSupplier<Iterator<Object[]>, ProtocolException> op = () -> {
                 try {
                     SqlExplain.Depth depth = statement.getDepth();
+                    if (depth == SqlExplain.Depth.LOGICAL)
+                        throw new NonBreakingException(ErrorCodes.UNSUPPORTED_FEATURE, "Logical explanation is unsupported.");
+
                     if (depth == SqlExplain.Depth.TYPE) {
                         String dump = RelOptUtil.dumpType(statement.getRowType());
                         return singletonList(new Object[]{dump}).iterator();
@@ -305,17 +308,10 @@ public class QueryProviderImpl implements QueryProvider {
 
                     GSOptimizer optimizer = statement.getOptimizer();
                     RelRoot relRoot = optimizer.optimizeLogical(query);
-
-                    RelNode plan = relRoot.project();
-                    if (depth == SqlExplain.Depth.LOGICAL) {
-                        String dump = RelOptUtil.dumpPlan("", plan, statement.getFormat(), statement.getDetailLevel());
-                        return singletonList(new Object[]{dump}).iterator();
-                    }
-
-                    plan = optimizer.optimizePhysical(relRoot);
-                    String dump = RelOptUtil.dumpPlan("", plan, statement.getFormat(), statement.getDetailLevel());
-
-                    return singletonList(new Object[]{dump}).iterator();
+                    GSRelNode physicalPlan = optimizer.optimizePhysical(relRoot);
+                    LocalSession localSession = new LocalSession(session.getUsername());
+                    ResponsePacket packet = handler.executeExplain(session.getSpace(), physicalPlan, params, localSession);
+                    return new ArrayIterator<>(packet.getResultEntry().getFieldValues());
                 } catch (Exception e) {
                     throw new NonBreakingException(ErrorCodes.INTERNAL_ERROR, "Failed to execute operation.", e);
                 }

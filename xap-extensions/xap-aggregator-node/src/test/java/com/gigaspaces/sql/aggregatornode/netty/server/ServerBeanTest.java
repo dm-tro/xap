@@ -49,55 +49,19 @@ class ServerBeanTest extends AbstractServerTest{
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testExplainLogical(boolean simple) throws Exception {
+    void testExplain(boolean simple) throws Exception {
         try (Connection conn = connect(simple)) {
-            String query = "" + String.format("EXPLAIN PLAN WITHOUT IMPLEMENTATION FOR SELECT first_name, last_name, email, age FROM \"%s\" as T where T.last_name = ? OR T.first_name = ?", MyPojo.class.getName());
+            String query = String.format("EXPLAIN PLAN FOR SELECT first_name, last_name, email, age FROM \"%s\" as T where T.last_name = 'Aa'", MyPojo.class.getName());
             final Statement statement = conn.createStatement();
             Assertions.assertTrue(statement.execute(query));
             ResultSet resultSet = statement.getResultSet();
-            Assertions.assertTrue(resultSet.next());
-            String plan = resultSet.getString(1);
             String expected = "" +
-                    "LogicalProject(first_name=[$6], last_name=[$8], email=[$5], age=[$0])\n" +
-                    "  LogicalFilter(condition=[OR(=($8, ?0), =($6, ?1))])\n" +
-                    "    LogicalTableScan(table=[[root, com.gigaspaces.sql.aggregatornode.netty.server.MyPojo]])\n";
-            Assertions.assertEquals(expected, plan);
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testExplainType(boolean simple) throws Exception {
-        try (Connection conn = connect(simple)) {
-            String query = "" + String.format("EXPLAIN PLAN WITH TYPE FOR SELECT first_name, last_name, email, age FROM \"%s\" as T where T.last_name = ? OR T.first_name = ?", MyPojo.class.getName());
-            final Statement statement = conn.createStatement();
-            Assertions.assertTrue(statement.execute(query));
-            ResultSet resultSet = statement.getResultSet();
-            Assertions.assertTrue(resultSet.next());
-            String plan = resultSet.getString(1);
-            String expected = "" +
-                    "first_name VARCHAR,\n" +
-                    "last_name VARCHAR,\n" +
-                    "email VARCHAR,\n" +
-                    "age INTEGER";
-            Assertions.assertEquals(expected, plan);
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testExplainPhysical(boolean simple) throws Exception {
-        try (Connection conn = connect(simple)) {
-            String query = "" + String.format("EXPLAIN PLAN WITH IMPLEMENTATION FOR SELECT first_name, last_name, email, age FROM \"%s\" as T where T.last_name = ? OR T.first_name = ?", MyPojo.class.getName());
-            final Statement statement = conn.createStatement();
-            Assertions.assertTrue(statement.execute(query));
-            ResultSet resultSet = statement.getResultSet();
-            Assertions.assertTrue(resultSet.next());
-            String plan = resultSet.getString(1);
-            String expected = "" +
-                    "GSCalc(expr#0..10=[{inputs}], expr#11=[?0], expr#12=[=($t8, $t11)], expr#13=[?1], expr#14=[=($t6, $t13)], expr#15=[OR($t12, $t14)], first_name=[$t6], last_name=[$t8], email=[$t5], age=[$t0], $condition=[$t15])\n" +
-                    "  GSTableScan(table=[[root, com.gigaspaces.sql.aggregatornode.netty.server.MyPojo]])\n";
-            Assertions.assertEquals(expected, plan);
+"| explain                                                                     |\n" +
+"| --------------------------------------------------------------------------- |\n" +
+"| 'FullScan: com.gigaspaces.sql.aggregatornode.netty.server.MyPojo as MyPojo' |\n" +
+"| '  Select: first_name, last_name, email, age'                               |\n" +
+"| '  Filter: (last_name = Aa)'                                                |";
+            DumpUtils.checkResult(resultSet, expected);
         }
     }
 

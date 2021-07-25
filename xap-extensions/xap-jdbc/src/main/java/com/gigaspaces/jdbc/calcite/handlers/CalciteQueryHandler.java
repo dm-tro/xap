@@ -55,6 +55,18 @@ public class CalciteQueryHandler {
         return packet;
     }
 
+    public ResponsePacket executeExplain(IJSpace space, GSRelNode relNode, Object[] preparedValues, LocalSession session) throws SQLException {
+        ResponsePacket packet = new ResponsePacket();
+        QueryExecutionConfig queryExecutionConfig;
+        queryExecutionConfig = new QueryExecutionConfig(true, false);
+        QueryExecutor qE = new QueryExecutor(space, queryExecutionConfig, preparedValues);
+        SelectHandler selectHandler = new SelectHandler(qE, session);
+        relNode.accept(selectHandler);
+        QueryResult queryResult = qE.execute();
+        packet.setResultEntry(((ExplainPlanQueryResult) queryResult).convertEntriesToResultArrays(queryExecutionConfig));
+        return packet;
+    }
+
     private GSRelNode optimizeWithCalcite(String query, IJSpace space, Properties properties) throws SQLException {
         try {
             query = prepareQueryForCalcite(query, properties);
