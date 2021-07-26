@@ -6,6 +6,7 @@ import com.gigaspaces.jdbc.calcite.GSOptimizerValidationResult;
 import com.gigaspaces.jdbc.calcite.GSRelNode;
 import com.gigaspaces.jdbc.calcite.handlers.CalciteQueryHandler;
 import com.gigaspaces.jdbc.calcite.sql.extension.SqlShowOption;
+import com.gigaspaces.jdbc.calcite.utils.CalciteUtils;
 import com.gigaspaces.query.sql.functions.extended.LocalSession;
 import com.gigaspaces.sql.aggregatornode.netty.exception.NonBreakingException;
 import com.gigaspaces.sql.aggregatornode.netty.exception.ParseException;
@@ -159,6 +160,7 @@ public class QueryProviderImpl implements QueryProvider {
                 return Collections.singletonList(portal);
             }
 
+            query = prepareQueryForCalcite(session, query);
             GSOptimizer optimizer = new GSOptimizer(session.getSpace());
 
             SqlNodeList nodes = optimizer.parseMultiline(query);
@@ -182,6 +184,7 @@ public class QueryProviderImpl implements QueryProvider {
             assert paramTypes.length == 0;
             return new StatementImpl(this, name, null, null, StatementDescription.EMPTY);
         }
+        query = prepareQueryForCalcite(session, query);
         GSOptimizer optimizer = new GSOptimizer(session.getSpace());
         try {
             return prepareStatement(session, name, optimizer, paramTypes, optimizer.parse(query));
@@ -420,5 +423,11 @@ public class QueryProviderImpl implements QueryProvider {
             throw new NonBreakingException(ErrorCodes.INVALID_PARAMETER_VALUE,
                     literal.getParserPosition(), "String literal is expected.");
         return literal.getValueAs(String.class);
+    }
+
+    private static String prepareQueryForCalcite(Session session, String query) {
+        Properties customProperties = session.getSpace().getURL().getCustomProperties();
+        query = CalciteUtils.prepareQueryForCalcite(query, customProperties);
+        return query;
     }
 }

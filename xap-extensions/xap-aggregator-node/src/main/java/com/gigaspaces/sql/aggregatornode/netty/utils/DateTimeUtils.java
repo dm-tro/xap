@@ -96,6 +96,9 @@ public class DateTimeUtils {
             if (x instanceof OffsetTime) {
                 return toString((OffsetTime) x);
             }
+            if (x instanceof Instant) {
+                return toString((Instant) x);
+            }
         }
 
         throw new NonBreakingException(ErrorCodes.INVALID_PARAMETER_VALUE, "Unsupported object type: " + x.getClass());

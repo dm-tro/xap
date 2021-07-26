@@ -13,7 +13,7 @@ public class ExplainStatement extends StatementImpl {
     private static final StatementDescription DESCRIPTION = new StatementDescription(
             ParametersDescription.EMPTY,
             new RowDescription(ImmutableList.of(
-                    new ColumnDescription("explain", TypeUtils.PG_TYPE_VARCHAR))));
+                    new ColumnDescription("Explain Plan", TypeUtils.PG_TYPE_VARCHAR))));
 
     private final SqlExplain.Depth depth;
     private final SqlExplainLevel detailLevel;

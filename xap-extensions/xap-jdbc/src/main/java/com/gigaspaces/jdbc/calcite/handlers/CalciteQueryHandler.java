@@ -1,7 +1,10 @@
 package com.gigaspaces.jdbc.calcite.handlers;
 
 import com.gigaspaces.jdbc.QueryExecutor;
-import com.gigaspaces.jdbc.calcite.*;
+import com.gigaspaces.jdbc.calcite.GSOptimizer;
+import com.gigaspaces.jdbc.calcite.GSOptimizerValidationResult;
+import com.gigaspaces.jdbc.calcite.GSRelNode;
+import com.gigaspaces.jdbc.calcite.SelectHandler;
 import com.gigaspaces.jdbc.model.QueryExecutionConfig;
 import com.gigaspaces.jdbc.model.result.ExplainPlanQueryResult;
 import com.gigaspaces.jdbc.model.result.QueryResult;
@@ -21,13 +24,11 @@ import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import static com.gigaspaces.jdbc.calcite.CalciteDefaults.isCalcitePropertySet;
+import static com.gigaspaces.jdbc.calcite.utils.CalciteUtils.prepareQueryForCalcite;
 
 public class CalciteQueryHandler {
     private boolean explainPlan;
 
-    private static final String EXPLAIN_PREFIX = "explain";
-    private static final String SELECT_PREFIX = "select";
 
     public ResponsePacket handle(String query, IJSpace space, Object[] preparedValues) throws SQLException {
         Properties customProperties = space.getURL().getCustomProperties();
@@ -98,36 +99,4 @@ public class CalciteQueryHandler {
         }
     }
 
-    /**
-     * Based on the system property or custom Space property, we parse the query
-     * and adapt it to calcite notation. We do this only if the property is set,
-     * in order to avoid performance penalty of String manipulation.
-     */
-    private static String prepareQueryForCalcite(String query, Properties properties) {
-        //support for ; at end of statement - more than one statement is not supported.
-        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_SEMICOLON_SEPARATOR, properties)) {
-            if (query.endsWith(";")) {
-                query = query.replaceFirst(";", "");
-            }
-        }
-        //support for != instead of <>
-        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_INEQUALITY, properties)) {
-            query = query.replaceAll("!=", "<>");
-        }
-        //replace rownum with row_number() if needed
-        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_ROWNUM, properties)) {
-            query = replaceRowNum( query );
-        }
-        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_EXPLAIN_PLAN, properties)) {
-            if (query.toLowerCase().replaceAll("\\s+", "").startsWith(EXPLAIN_PREFIX + SELECT_PREFIX)) {
-                String queryAfterSelect = query.substring(query.toLowerCase().indexOf(SELECT_PREFIX) + SELECT_PREFIX.length());
-                query = "EXPLAIN PLAN FOR SELECT" + queryAfterSelect;
-            }
-        }
-        return query;
-    }
-
-    public static String replaceRowNum(String query) {
-        return query.replaceAll(" (?i)rownum", " row_number()");
-    }
 }

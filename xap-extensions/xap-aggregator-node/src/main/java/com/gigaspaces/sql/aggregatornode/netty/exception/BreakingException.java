@@ -11,6 +11,6 @@ public class BreakingException extends ProtocolException {
 
     @Override
     public boolean closeSession() {
-        return true;
+        return false;
     }
 }

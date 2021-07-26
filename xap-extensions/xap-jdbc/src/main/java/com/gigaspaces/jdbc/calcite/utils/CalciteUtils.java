@@ -1,12 +1,19 @@
 package com.gigaspaces.jdbc.calcite.utils;
 
+import com.gigaspaces.jdbc.calcite.CalciteDefaults;
 import com.gigaspaces.jdbc.calcite.DateTypeResolver;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 
 import java.math.BigDecimal;
+import java.util.Properties;
+
+import static com.gigaspaces.jdbc.calcite.CalciteDefaults.isCalcitePropertySet;
 
 public class CalciteUtils {
+
+    private static final String EXPLAIN_PREFIX = "explain";
+    private static final String SELECT_PREFIX = "select";
 
     public static Object getValue(RexLiteral literal) {
         return getValue(literal, null);
@@ -114,5 +121,41 @@ public class CalciteUtils {
         }
 
     }
+
+    /**
+     * Based on the system property or custom Space property, we parse the query
+     * and adapt it to calcite notation. We do this only if the property is set,
+     * in order to avoid performance penalty of String manipulation.
+     */
+    public static String prepareQueryForCalcite(String query, Properties properties) {
+        //support for ; at end of statement - more than one statement is not supported.
+        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_SEMICOLON_SEPARATOR, properties)) {
+            if (query.endsWith(";")) {
+                query = query.replaceFirst(";", "");
+            }
+        }
+        //support for != instead of <>
+        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_INEQUALITY, properties)) {
+            query = query.replaceAll("!=", "<>");
+        }
+        //replace rownum with row_number() if needed
+        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_ROWNUM, properties)) {
+            query = replaceRowNum( query );
+        }
+        if (isCalcitePropertySet(CalciteDefaults.SUPPORT_EXPLAIN_PLAN, properties)) {
+            if (query.toLowerCase().replaceAll("\\s+", "").startsWith(EXPLAIN_PREFIX + SELECT_PREFIX)) {
+                String queryAfterSelect = query.substring(query.toLowerCase().indexOf(SELECT_PREFIX) + SELECT_PREFIX.length());
+                query = "EXPLAIN PLAN FOR SELECT" + queryAfterSelect;
+            }
+        }
+        return query;
+    }
+
+    public static String replaceRowNum(String query) {
+        return query.replaceAll(" (?i)rownum", " row_number()");
+    }
+
+
+
 }
 
