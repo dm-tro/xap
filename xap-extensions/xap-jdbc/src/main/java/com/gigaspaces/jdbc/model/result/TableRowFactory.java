@@ -25,4 +25,8 @@ public class TableRowFactory {
     public static TableRow createProjectedTableRow(TableRow row, QueryExecutor queryExecutor) {
         return new TableRow(row, queryExecutor);
     }
+
+    public static TableRow applyCaseColumnToTableRow(TableRow row, List<CaseColumn> caseColumns) {
+        return new TableRow(row, caseColumns);
+    }
 }

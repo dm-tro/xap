@@ -168,22 +168,62 @@ public class SelectHandler extends RelShuttleImpl {
 
     private void handleCalcFromAggregate(GSCalc other){
         RexProgram program = other.getProgram();
+        List<String> inputFields = program.getInputRowType().getFieldNames();
         List<String> outputFields = program.getOutputRowType().getFieldNames();
-        for (int i = 0; i < outputFields.size(); i++) {
-            String outputField = outputFields.get(i);
-            if (other.equals(rootCalc)) {
-                IQueryColumn qc = queryExecutor.getColumnByColumnName(outputField);
-                if (qc != null) {
-                    queryExecutor.addColumn(qc);
-                    queryExecutor.addProjectedColumn(qc);
+        List<RexLocalRef> projects = program.getProjectList();
+        if (other.equals(rootCalc)) {
+            for (int i = 0; i < projects.size(); i++) {
+                RexLocalRef localRef = projects.get(i);
+                RexNode node = program.getExprList().get(localRef.getIndex());
+                switch (node.getKind()) {
+                    case INPUT_REF: { //its aggregationColumn / column in group by clause.
+                        String outputField = outputFields.get(i);
+                        IQueryColumn qc = queryExecutor.getColumnByColumnName(outputField);
+                        if (qc != null) {
+                            queryExecutor.addColumn(qc);
+                            queryExecutor.addProjectedColumn(qc);
+                        }
+                        break;
+                    }
+                    case CASE: {
+                        RexCall call = (RexCall) node;
+                        CaseColumn caseColumn = new CaseColumn(outputFields.get(i), CalciteUtils.getJavaType(call), i);
+                        CaseConditionHandler caseHandler = new CaseConditionHandler(program, queryExecutor, inputFields,
+                                null, caseColumn);
+                        caseHandler.visitCall(call);
+                        queryExecutor.addCaseColumn(caseColumn);
+                        queryExecutor.addProjectedColumn(caseColumn);
+                        break;
+                    }
+                    case OTHER_FUNCTION: {
+                        RexCall call = (RexCall) node;
+                        SqlFunction sqlFunction = (SqlFunction) call.op;
+                        List<IQueryColumn> queryColumns = new ArrayList<>();
+                        addQueryColumns(call, queryColumns, program, inputFields, outputFields, i);
+                        FunctionCallColumn functionCallColumn = new FunctionCallColumn(session, queryColumns, sqlFunction.getName(), sqlFunction.toString(), outputFields.get(i), true, i);
+                        queryExecutor.addColumn(functionCallColumn);
+                        queryExecutor.addProjectedColumn(functionCallColumn);
+                        break;
+                    }
+                    case LITERAL: {
+                        RexLiteral literal = (RexLiteral) node;
+                        LiteralColumn column = new LiteralColumn(CalciteUtils.getValue(literal), i,
+                                outputFields.get(i), true);
+                        queryExecutor.addColumn(column);
+                        queryExecutor.addProjectedColumn(column);
+                        break;
+                    }
+                    default:
+                        throw new UnsupportedOperationException("Unexpected node kind [" + node.getKind() + "]");
                 }
             }
-            if (program.getCondition() != null) {
-                ConditionHandler conditionHandler = new ConditionHandler(program, queryExecutor, program.getInputRowType().getFieldNames());
-                program.getCondition().accept(conditionHandler);
-                for (Map.Entry<TableContainer, QueryTemplatePacket> tableContainerQueryTemplatePacketEntry : conditionHandler.getQTPMap().entrySet()) {
-                    tableContainerQueryTemplatePacketEntry.getKey().setQueryTemplatePacket(tableContainerQueryTemplatePacketEntry.getValue());
-                }
+        }
+
+        if (program.getCondition() != null) {
+            ConditionHandler conditionHandler = new ConditionHandler(program, queryExecutor, program.getInputRowType().getFieldNames());
+            program.getCondition().accept(conditionHandler);
+            for (Map.Entry<TableContainer, QueryTemplatePacket> tableContainerQueryTemplatePacketEntry : conditionHandler.getQTPMap().entrySet()) {
+                tableContainerQueryTemplatePacketEntry.getKey().setQueryTemplatePacket(tableContainerQueryTemplatePacketEntry.getValue());
             }
         }
     }
@@ -285,7 +325,7 @@ public class SelectHandler extends RelShuttleImpl {
                         break;
                     }
                     default:
-                        throw new UnsupportedOperationException("Unexpected node kind expected CASE / INPUT_REF but was [" + node.getKind() + "]");
+                        throw new UnsupportedOperationException("Unexpected node kind [" + node.getKind() + "]");
                 }
             }
         }

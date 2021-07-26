@@ -200,7 +200,7 @@ public abstract class QueryResult {
         if (caseColumns.isEmpty()) return;
         List<TableRow> newRows = new ArrayList<>();
         for (TableRow row : getRows()) {
-            newRows.add(new TableRow(row, caseColumns));
+            newRows.add(TableRowFactory.applyCaseColumnToTableRow(row, caseColumns));
         }
         setRows(newRows);
     }

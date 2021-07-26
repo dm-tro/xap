@@ -6,10 +6,7 @@ import com.gigaspaces.jdbc.QueryExecutor;
 import com.gigaspaces.jdbc.model.table.*;
 import com.j_spaces.jdbc.builder.QueryEntryPacket;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TableRow implements Comparable<TableRow> {
     private final IQueryColumn[] columns;
@@ -35,23 +32,29 @@ public class TableRow implements Comparable<TableRow> {
 
     }
 
-    public TableRow(TableRow tableRow, List<CaseColumn> caseColumns) {
-        int finalSize = tableRow.columns.length + caseColumns.size();
-        this.columns = new IQueryColumn[finalSize];
-        this.values = new Object[finalSize];
+    TableRow(TableRow tableRow, List<CaseColumn> caseColumns) {
         this.orderColumns = tableRow.orderColumns;
         this.orderValues = tableRow.orderValues;
         this.groupByColumns = tableRow.groupByColumns;
         this.groupByValues = tableRow.groupByValues;
-        for (int i = 0; i < finalSize; i++) {
-            if (i < tableRow.columns.length) {
-                this.columns[i] = tableRow.columns[i];
-                this.values[i] = tableRow.values[i];
+        List<IQueryColumn> columnsList = new ArrayList<>();
+        List<Object> valuesList = new ArrayList<>();
+        for (int i = 0; i < tableRow.columns.length; i++) {
+            columnsList.add(tableRow.columns[i]);
+            if(tableRow.columns[i] instanceof CaseColumn) {
+                valuesList.add(((CaseColumn) tableRow.columns[i]).getValue(tableRow));
             } else {
-                this.columns[i] = caseColumns.get(i - tableRow.columns.length);
-                this.values[i] = ((CaseColumn) columns[i]).getValue(tableRow);
+                valuesList.add(tableRow.values[i]);
             }
         }
+        for (CaseColumn caseColumn : caseColumns) {
+            if (!columnsList.contains(caseColumn)) {
+                columnsList.add(caseColumn);
+                valuesList.add(caseColumn.getValue(tableRow));
+            }
+        }
+        this.columns = columnsList.toArray(new IQueryColumn[0]);
+        this.values = valuesList.toArray(new Object[0]);
     }
 
     TableRow(IEntryPacket entryPacket, ConcreteTableContainer tableContainer) {
@@ -159,7 +162,17 @@ public class TableRow implements Comparable<TableRow> {
         this.columns = queryExecutor.getSelectedColumns().toArray(new IQueryColumn[0]);
         this.values = new Object[this.columns.length];
         for (int i = 0; i < this.columns.length; i++) {
-            this.values[i] = row.getPropertyValue(this.columns[i].getAlias());
+            Object value = null;
+            if (this.columns[i] instanceof CaseColumn) {
+                value = ((CaseColumn) this.columns[i]).getValue(row);
+            } else if (this.columns[i] instanceof LiteralColumn) {
+                value = this.columns[i].getCurrentValue();
+            } else if (this.columns[i] instanceof FunctionCallColumn) {
+                value = this.columns[i].getCurrentValue(); // TODO: @sagiv validate..
+            } else { // this.columns[i] instanceof AggregationColumn || this.columns[i] instanceof ConcreteColumn
+                value = row.getPropertyValue(this.columns[i].getAlias());
+            }
+            this.values[i] = value;
         }
 
         this.orderColumns = queryExecutor.getOrderColumns().toArray(new OrderColumn[0]);
