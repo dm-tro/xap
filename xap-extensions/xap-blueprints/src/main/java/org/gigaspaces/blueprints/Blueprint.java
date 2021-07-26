@@ -3,13 +3,25 @@ package org.gigaspaces.blueprints;
 import com.gigaspaces.internal.utils.yaml.YamlUtils;
 import com.gigaspaces.internal.version.PlatformVersion;
 import com.gigaspaces.start.SystemLocations;
-
+import io.airlift.airline.Cli;
+import io.airlift.airline.Help;
+import io.swagger.codegen.cmd.ConfigHelp;
+import io.swagger.codegen.cmd.Generate;
+import io.swagger.codegen.cmd.Langs;
+import io.swagger.codegen.cmd.Meta;
+import io.swagger.codegen.cmd.Validate;
+import io.swagger.codegen.cmd.Version;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -88,7 +100,63 @@ public class Blueprint {
         if (Files.exists(target))
             throw new IllegalArgumentException("Target already exists: " + target);
 
-        TemplateUtils.evaluateTree(content, target, tryParse( merge(valuesOverrides)));
+        Map<String, String> properties = merge(valuesOverrides);
+
+        TemplateUtils.evaluateTree(content, target, tryParse(properties));
+        generateModelsFromSwagger(target, properties);
+    }
+
+    private void generateModelsFromSwagger(Path target, Map<String, String> properties) {
+        Cli.CliBuilder<Runnable> builder =
+            Cli.<Runnable>builder("swagger-codegen-cli")
+                .withDefaultCommand(Langs.class)
+                .withCommands(Generate.class, Meta.class, Langs.class, Help.class,
+                    ConfigHelp.class, Validate.class, Version.class);
+
+        if (properties.get("swagger") != null && !properties.get("swagger").isEmpty()) {
+            String modelPackage = properties.get("project.groupId") + ".model";
+            String separator = System.getProperty("file.separator");
+            String[] args = new String[]{
+                "generate",
+                "-i", properties.get("swagger"),
+                "--model-package", modelPackage,
+                "-l", "java",
+                "--library", "feign",
+                "-Dmodels",
+                "-DmodelTests=false",
+                "-DmodelDocs=false",
+                "-DhideGenerationTimestamp=true",
+                "-DdateLibrary=java8",
+                "-o", target.toFile().getAbsolutePath()};
+            System.out.println(target.toFile().getAbsolutePath());
+            builder.build().parse(args).run();
+            String path =
+                target.toFile().getAbsolutePath() + separator + "src" + separator + "main" + separator + "java"
+                    + separator + modelPackage.replaceAll("\\.", separator);
+            deleteAnnotations(path);
+        }
+    }
+
+    private void deleteAnnotations(String path) {
+        System.out.println(path);
+
+        File[] files = new File(path).listFiles();
+
+        Charset charset = StandardCharsets.UTF_8;
+        for (File file : files) {
+            String content;
+            try {
+                content = new String(Files.readAllBytes(file.toPath()), charset);
+                content = content.replaceAll(".*JsonProperty.*\n", "");
+                content = content.replaceAll(".*JsonCreator.*\n", "");
+                content = content.replaceAll(".*JsonValue.*\n", "");
+                content = content.replaceAll(".*ApiModel.*\n", "");
+                content = content.replaceAll(".*ApiModelProperty.*\n", "");
+                Files.write(file.toPath(), content.getBytes(charset));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private Map<String, String> merge(Map<String, String> overrides) throws IOException {
