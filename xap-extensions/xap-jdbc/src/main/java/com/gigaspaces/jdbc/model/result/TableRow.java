@@ -41,7 +41,7 @@ public class TableRow implements Comparable<TableRow> {
         List<Object> valuesList = new ArrayList<>();
         for (int i = 0; i < tableRow.columns.length; i++) {
             columnsList.add(tableRow.columns[i]);
-            if(tableRow.columns[i] instanceof CaseColumn) {
+            if(tableRow.columns[i].isCaseColumn()) {
                 valuesList.add(((CaseColumn) tableRow.columns[i]).getValue(tableRow));
             } else {
                 valuesList.add(tableRow.values[i]);
@@ -163,12 +163,12 @@ public class TableRow implements Comparable<TableRow> {
         this.values = new Object[this.columns.length];
         for (int i = 0; i < this.columns.length; i++) {
             Object value = null;
-            if (this.columns[i] instanceof CaseColumn) {
+            if (this.columns[i].isCaseColumn()) {
                 value = ((CaseColumn) this.columns[i]).getValue(row);
-            } else if (this.columns[i] instanceof LiteralColumn) {
+            } else if (this.columns[i].isLiteral()) {
                 value = this.columns[i].getCurrentValue();
-            } else if (this.columns[i] instanceof FunctionCallColumn) {
-                value = this.columns[i].getCurrentValue(); // TODO: @sagiv validate..
+            } else if (this.columns[i].isFunction()) {
+                value = this.columns[i].getCurrentValue();
             } else { // this.columns[i] instanceof AggregationColumn || this.columns[i] instanceof ConcreteColumn
                 value = row.getPropertyValue(this.columns[i].getAlias());
             }

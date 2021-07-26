@@ -74,4 +74,9 @@ public class LiteralColumn implements IQueryColumn{
     public String toString() {
         return getAlias();
     }
+
+    @Override
+    public boolean isLiteral() {
+        return true;
+    }
 }

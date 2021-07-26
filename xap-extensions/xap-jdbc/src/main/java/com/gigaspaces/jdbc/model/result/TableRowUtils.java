@@ -1,7 +1,10 @@
 package com.gigaspaces.jdbc.model.result;
 
 import com.gigaspaces.internal.utils.math.MutableNumber;
-import com.gigaspaces.jdbc.model.table.*;
+import com.gigaspaces.jdbc.model.table.AggregationColumn;
+import com.gigaspaces.jdbc.model.table.AggregationFunctionType;
+import com.gigaspaces.jdbc.model.table.IQueryColumn;
+import com.gigaspaces.jdbc.model.table.OrderColumn;
 import com.gigaspaces.metadata.StorageType;
 
 import java.util.Comparator;
@@ -48,7 +51,7 @@ public class TableRowUtils {
             if(qc.isAggregate()){
                 values[i] = aggregate((AggregationColumn) qc, tableRows);
             }
-            else if (qc instanceof CaseColumn) {
+            else if (qc.isCaseColumn()) {
                 values[i] = null;
             }
             else{

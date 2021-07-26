@@ -102,4 +102,9 @@ public class CaseColumn implements IQueryColumn{
                 ", caseConditions=" + caseConditions +
                 '}';
     }
+
+    @Override
+    public boolean isCaseColumn() {
+        return true;
+    }
 }

@@ -311,4 +311,9 @@ public class FunctionCallColumn implements IQueryColumn {
     public String toString() {
         return getAlias();
     }
+
+    @Override
+    public boolean isFunction() {
+        return true;
+    }
 }

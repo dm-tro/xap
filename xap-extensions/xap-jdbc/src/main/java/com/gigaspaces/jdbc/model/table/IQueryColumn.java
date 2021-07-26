@@ -30,4 +30,12 @@ public interface IQueryColumn extends Comparable<IQueryColumn> {
     default boolean isAggregate(){
         return false;
     }
+
+    default boolean isCaseColumn(){
+        return false;
+    }
+
+    default boolean isFunction() { return false;}
+
+    default boolean isLiteral() { return false;}
 }
