@@ -168,7 +168,7 @@ public class TableRow implements Comparable<TableRow> {
             } else if (this.columns[i].isLiteral()) {
                 value = this.columns[i].getCurrentValue();
             } else if (this.columns[i].isFunction()) {
-                value = this.columns[i].getCurrentValue();
+                value = this.columns[i].getCurrentValue(); //function of scalar argument
             } else { // this.columns[i] instanceof AggregationColumn || this.columns[i] instanceof ConcreteColumn
                 value = row.getPropertyValue(this.columns[i].getAlias());
             }
