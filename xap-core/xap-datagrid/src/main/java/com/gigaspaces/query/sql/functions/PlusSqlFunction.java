@@ -1,6 +1,12 @@
 package com.gigaspaces.query.sql.functions;
 
+import com.gigaspaces.internal.utils.ObjectConverter;
+
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -29,12 +35,32 @@ public class PlusSqlFunction extends SqlFunction {
         assertNumberOfArguments(2, context);
         Object left = context.getArgument(0);
         Object right = context.getArgument(1);
+        Object res = null;
+        Class originalClass = null;
+
+        try {
+            if (left instanceof Time) {
+                originalClass = left.getClass();
+                left = ObjectConverter.convert(left, LocalTime.class);
+            }
+            if (left instanceof Date || left instanceof java.util.Date) {
+                originalClass = left.getClass();
+                left = ObjectConverter.convert(left, LocalDate.class);
+            }
+            if (left instanceof Timestamp) {
+                originalClass = left.getClass();
+                left = ObjectConverter.convert(left, LocalDateTime.class);
+            }
+        }
+        catch (Exception e){
+            throw new RuntimeException("adding " + left + " to " + right + " is not supported");
+        }
 
         if (left instanceof LocalTime) {
             if (right instanceof BigDecimal) {
                 if (nanoIntervals.contains(context.getType())) {
                     long milliToNanoFactor = 1000 * 1000;
-                    return ((LocalTime) left).plusNanos(((BigDecimal) right).longValue() * milliToNanoFactor);
+                    res = ((LocalTime) left).plusNanos(((BigDecimal) right).longValue() * milliToNanoFactor);
                 } else {
                     throw new RuntimeException("cannot add " + context.getType() + " to time");
                 }
@@ -44,10 +70,10 @@ public class PlusSqlFunction extends SqlFunction {
         if (left instanceof LocalDate) {
             if (right instanceof BigDecimal) {
                 if (monthIntervals.contains(context.getType())) {
-                    return ((LocalDate) left).plusMonths(((BigDecimal) right).longValue());
+                    res = ((LocalDate) left).plusMonths(((BigDecimal) right).longValue());
                 } else if (context.getType().equals("INTERVAL_DAY")) {
                     long milliToDaysFactor = 1000 * 60 * 60 * 24;
-                    return ((LocalDate) left).plusDays(((BigDecimal) right).longValue() / milliToDaysFactor);
+                    res =  ((LocalDate) left).plusDays(((BigDecimal) right).longValue() / milliToDaysFactor);
                 }
                 else {
                     throw new RuntimeException("cannot add " + context.getType() + " to date");
@@ -57,13 +83,25 @@ public class PlusSqlFunction extends SqlFunction {
         if (left instanceof LocalDateTime) {
             if (right instanceof BigDecimal) {
                 if (monthIntervals.contains(context.getType())) {
-                    return ((LocalDateTime) left).plusMonths(((BigDecimal) right).longValue());
+                    res = ((LocalDateTime) left).plusMonths(((BigDecimal) right).longValue());
                 } else if (nanoIntervals.contains(context.getType())){
                     long milliToNanoFactor = 1000 * 1000;
-                    return ((LocalDateTime) left).plusNanos(((BigDecimal) right).longValue() * milliToNanoFactor);
+                    res = ((LocalDateTime) left).plusNanos(((BigDecimal) right).longValue() * milliToNanoFactor);
                 }
                 else {
                     throw new RuntimeException("cannot add " + context.getType() + " to date");
+                }
+            }
+        }
+        if (res != null) {
+            if (originalClass == null){
+                return res;
+            }
+            else{
+                try {
+                    return ObjectConverter.convert(res, originalClass);
+                } catch (SQLException throwables) {
+                    throw new RuntimeException("adding " + left + " to " + right + " is not supported");
                 }
             }
         }
