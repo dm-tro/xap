@@ -20,11 +20,11 @@ public final class ServerBean implements AutoCloseable {
     static {
         CalciteDefaults.setCalciteDriverSystemProperty();
     }
-    static final boolean SSL = System.getProperty("ssl") != null;
-    private int port = 5432;
+    public static final int DEFAULT_PORT = 5432;
+    private static final boolean SSL = System.getProperty("ssl") != null;
+    private int port = DEFAULT_PORT;
 
-    AuthenticationProvider authProvider;
-
+    private AuthenticationProvider authProvider;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
 
